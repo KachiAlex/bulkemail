@@ -1,0 +1,116 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Users can only access their own data
+    match /users/{userId} {
+      allow read, write: if (isSignedIn() && request.auth.uid == userId) || isAdmin();
+    }
+    
+    // Contacts - users can only access their own contacts
+    match /contacts/{contactId} {
+      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.createdById == request.auth.uid) || isAdmin();
+    }
+    
+    // Accounts - users can only access their own accounts
+    match /accounts/{accountId} {
+      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.createdById == request.auth.uid) || isAdmin();
+    }
+    
+    // Opportunities - users can only access their own opportunities
+    match /opportunities/{opportunityId} {
+      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.createdById == request.auth.uid) || isAdmin();
+    }
+    
+    // Activities - users can only access their own activities
+    match /activities/{activityId} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+    
+    // Tasks - users can only access tasks assigned to them or created by them
+    match /tasks/{taskId} {
+      allow read, write: if isAdmin() || (
+        isSignedIn() && (
+          resource.data.assignedTo == request.auth.uid ||
+          resource.data.createdById == request.auth.uid ||
+          request.resource.data.assignedTo == request.auth.uid ||
+          request.resource.data.createdById == request.auth.uid
+        )
+      );
+    }
+    
+    // Pipelines - users can only access their own pipelines
+    match /pipelines/{pipelineId} {
+      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.createdById == request.auth.uid) || isAdmin();
+    }
+    
+    // Email Threads - users can only access their own email threads
+    match /emailThreads/{threadId} {
+      allow read, write: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+    
+    // Calls - users can only access their own calls
+    match /calls/{callId} {
+      allow read, write: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+    
+    // SMS - users can only access their own SMS
+    match /sms/{smsId} {
+      allow read, write: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+    
+    // Campaigns - users can only access their own campaigns
+    match /campaigns/{campaignId} {
+      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.createdById == request.auth.uid) || isAdmin();
+    }
+    
+    // Segments - users can only access their own segments
+    match /segments/{segmentId} {
+      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.createdById == request.auth.uid) || isAdmin();
+    }
+    
+    // Email Templates - users can only access their own templates
+    match /emailTemplates/{templateId} {
+      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.createdById == request.auth.uid) || isAdmin();
+    }
+    
+    // Dashboards - users can only access their own dashboards
+    match /dashboards/{dashboardId} {
+      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.createdById == request.auth.uid) || isAdmin();
+    }
+    
+    // Lead Scores - users can only access their own lead scores
+    match /leadScores/{scoreId} {
+      allow read, write: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+    
+    // AI Recommendations - allow read for all authenticated users
+    match /aiRecommendations/{recommendationId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    
+    // Analytics - users can only access their own analytics
+    match /analytics/{analyticsId} {
+      allow read, write: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+  }
+}
