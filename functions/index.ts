@@ -24,8 +24,11 @@ function getConfig(key: string): string | undefined {
   try {
     const config = functions.config();
     const [namespace, configKey] = key.split('_', 2);
-    if (config[namespace] && config[namespace][configKey]) {
-      return config[namespace][configKey];
+    // Handle namespace (case-insensitive) and key (lowercase)
+    const namespaceLower = namespace.toLowerCase();
+    const configKeyLower = configKey.toLowerCase();
+    if (config[namespaceLower] && config[namespaceLower][configKeyLower]) {
+      return config[namespaceLower][configKeyLower];
     }
   } catch (e) {
     // Ignore config errors
