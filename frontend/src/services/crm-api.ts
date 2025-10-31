@@ -304,7 +304,9 @@ class CRMAPI {
     html: string;
   }): Promise<void> {
     const user = this.getCurrentUser();
+    console.log('Calling sendCampaignEmail with user:', user.uid);
     const sendCampaignEmail = httpsCallable(functions, 'sendCampaignEmail');
+    
     await sendCampaignEmail({
       to: emailData.to,
       subject: emailData.subject,

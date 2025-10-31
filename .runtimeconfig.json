@@ -1,0 +1,14 @@
+{
+  "from": {
+    "email": "onyedika.akoma@gmail.com",
+    "name": "PANDI CRM"
+  },
+  "smtp": {
+    "host": "smtp.gmail.com",
+    "port": "587",
+    "secure": "false",
+    "user": "onyedika.akoma@gmail.com",
+    "pass": "Kachiakoma$reus2660"
+  }
+}
+
