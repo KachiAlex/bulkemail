@@ -1705,9 +1705,12 @@ export default function Email() {
                   init={{
                     height: 400,
                     menubar: false,
-                    plugins: 'anchor autolink charmap codesample emotons image link lists media searchreplace table visualblocks wordcount',
-                    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
-                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                    plugins: 'code',
+                    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | code | removeformat',
+                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                    valid_elements: '*[*]',
+                    extended_valid_elements: '*[*]',
+                    valid_children: '+body[style]'
                   }}
                 />
               </Grid>
