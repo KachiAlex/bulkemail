@@ -1,9 +1,6 @@
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { setGlobalOptions } from 'firebase-functions/v2';
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 // Lazy-load heavy deps to avoid cold-start/discovery timeouts
-// Force redeploy to pick up runtime config
 let sgMail: any;
 let AWS: any;
 let nodemailer: any;
@@ -11,20 +8,11 @@ let nodemailer: any;
 // Initialize Firebase Admin
 admin.initializeApp();
 
-// Set global options for Gen 2 functions
-setGlobalOptions({ region: 'us-central1' });
-
-// Helper to get config values from either runtime config or env vars
+// Helper to get config values from runtime config
 function getConfig(key: string): string | undefined {
-  // Try environment variables first
-  if (process.env[key]) {
-    return process.env[key];
-  }
-  // Fall back to runtime config (deprecated but works until March 2026)
   try {
     const config = functions.config();
     const [namespace, configKey] = key.split('_', 2);
-    // Handle namespace (case-insensitive) and key (lowercase)
     const namespaceLower = namespace.toLowerCase();
     const configKeyLower = configKey.toLowerCase();
     if (config[namespaceLower] && config[namespaceLower][configKeyLower]) {
@@ -103,7 +91,6 @@ function getSMTPTransporter(): any | null {
 }
 
 function getFromEmail(): string {
-  // Check runtime config for FROM_EMAIL specifically
   try {
     const config = functions.config();
     if (config.from && config.from.email) {
@@ -122,7 +109,6 @@ function getFromEmail(): string {
 }
 
 function getFromName(): string {
-  // Check runtime config for FROM_NAME specifically
   try {
     const config = functions.config();
     if (config.from && config.from.name) {
@@ -236,23 +222,23 @@ async function sendEmailViaSMTP(
 }
 
 // Cloud Function: sendCampaignEmail
-export const sendCampaignEmail = onCall(async (request) => {
+export const sendCampaignEmail = functions.https.onCall(async (data: any, context: any) => {
   // Debug logging
-  console.log('sendCampaignEmail called. Auth:', request.auth);
+  console.log('sendCampaignEmail called. Auth:', context.auth);
   
   // Verify authentication
-  if (!request.auth) {
-    console.error('Authentication failed - request.auth is missing');
-    throw new HttpsError(
+  if (!context.auth) {
+    console.error('Authentication failed - context.auth is missing');
+    throw new functions.https.HttpsError(
       'unauthenticated',
       'User must be authenticated to send emails'
     );
   }
 
-  const { to, subject, html, from, fromName } = request.data;
+  const { to, subject, html, from, fromName } = data;
 
   if (!to || !subject || !html) {
-    throw new HttpsError(
+    throw new functions.https.HttpsError(
       'invalid-argument',
       'Missing required fields: to, subject, html'
     );
@@ -283,7 +269,7 @@ export const sendCampaignEmail = onCall(async (request) => {
   } catch (error: any) {
     console.error('Error sending email:', error);
     console.error('Error stack:', error.stack);
-    throw new HttpsError(
+    throw new functions.https.HttpsError(
       'internal',
       `Failed to send email: ${error.message}`
     );
@@ -292,10 +278,10 @@ export const sendCampaignEmail = onCall(async (request) => {
 
 // Cloud Function: adminCreateUser
 // Creates a Firebase Auth user and Firestore users doc with role. Allows bootstrap when no users exist.
-export const adminCreateUser = onCall(async (request) => {
-  const { email, password, firstName = '', lastName = '', role = 'user' } = request.data || {};
+export const adminCreateUser = functions.https.onCall(async (data: any, context: any) => {
+  const { email, password, firstName = '', lastName = '', role = 'user' } = data || {};
   if (!email || !password) {
-    throw new HttpsError('invalid-argument', 'email and password are required');
+    throw new functions.https.HttpsError('invalid-argument', 'email and password are required');
   }
 
   // Check if caller is admin OR no users exist (bootstrap)
@@ -306,14 +292,14 @@ export const adminCreateUser = onCall(async (request) => {
   } catch (_) {}
 
   if (!isBootstrap) {
-    if (!request.auth) {
-      throw new HttpsError('unauthenticated', 'Authentication required');
+    if (!context.auth) {
+      throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
     }
-    const callerUid = request.auth.uid;
+    const callerUid = context.auth.uid;
     const callerDoc = await admin.firestore().collection('users').doc(callerUid).get();
     const callerRole = callerDoc.exists ? (callerDoc.data() as any).role : undefined;
     if (callerRole !== 'admin') {
-      throw new HttpsError('permission-denied', 'Admin privileges required');
+      throw new functions.https.HttpsError('permission-denied', 'Admin privileges required');
     }
   }
 
@@ -335,7 +321,7 @@ export const adminCreateUser = onCall(async (request) => {
     return { success: true, uid: userRecord.uid };
   } catch (error: any) {
     console.error('adminCreateUser error:', error);
-    throw new HttpsError('internal', error.message || 'Failed to create user');
+    throw new functions.https.HttpsError('internal', error.message || 'Failed to create user');
   }
 });
 
