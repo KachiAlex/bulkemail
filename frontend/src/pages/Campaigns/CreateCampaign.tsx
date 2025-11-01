@@ -26,6 +26,8 @@ import { ArrowBack, Send, AutoAwesome } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { campaignsAPI, segmentsAPI, aiAPI } from '../../services/api';
 import { crmAPI } from '../../services/crm-api';
+import { functions } from '../../../firebase-config';
+import { httpsCallable } from 'firebase/functions';
 
 const steps = ['Campaign Type', 'Content', 'Recipients', 'Preview', 'Review & Send'];
 
@@ -34,6 +36,7 @@ export default function CreateCampaign() {
   const [activeStep, setActiveStep] = useState(0);
   const [segments, setSegments] = useState<any[]>([]);
   const [contacts, setContacts] = useState<any[]>([]);
+  const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
   const [generatingContent, setGeneratingContent] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [selectAllContacts, setSelectAllContacts] = useState(false);
@@ -55,7 +58,21 @@ export default function CreateCampaign() {
   useEffect(() => {
     fetchSegments();
     fetchContacts();
+    fetchTemplates();
   }, []);
+
+  const fetchTemplates = async () => {
+    try {
+      const getEmailTemplates = httpsCallable(functions, 'getEmailTemplates');
+      const result: any = await getEmailTemplates();
+      if (result.data.success) {
+        setEmailTemplates(result.data.templates);
+      }
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+      // Fallback to hardcoded templates if fetch fails
+    }
+  };
 
   const fetchSegments = async () => {
     try {
@@ -104,76 +121,12 @@ export default function CreateCampaign() {
     };
   };
 
-  // Email templates
-  const emailTemplates = [
-    {
-      id: 'welcome',
-      name: 'Welcome Email',
-      subject: 'Welcome to {{company}}, {{firstName}}!',
-      content: `<h2>Welcome {{firstName}}!</h2>
-<p>Thank you for joining us at {{company}}. We're excited to have you on board!</p>
-<p>Here's what you can expect:</p>
-<ul>
-<li>Personalized service tailored to your needs</li>
-<li>Regular updates and insights</li>
-<li>24/7 customer support</li>
-</ul>
-<p>If you have any questions, feel free to reach out to us.</p>
-<p>Best regards,<br>The Team</p>`
-    },
-    {
-      id: 'newsletter',
-      name: 'Newsletter',
-      subject: 'Monthly Newsletter - {{company}}',
-      content: `<h2>Monthly Newsletter</h2>
-<p>Dear {{firstName}},</p>
-<p>Here's what's happening this month:</p>
-<h3>Latest Updates</h3>
-<p>We've been working hard to bring you the best experience possible.</p>
-<h3>Featured Content</h3>
-<p>Don't miss out on our latest insights and tips.</p>
-<p>Thank you for being a valued member of our community!</p>
-<p>Best regards,<br>The {{company}} Team</p>`
-    },
-    {
-      id: 'promotion',
-      name: 'Promotional Email',
-      subject: 'Special Offer for {{firstName}}!',
-      content: `<h2>Special Offer Just for You!</h2>
-<p>Hi {{firstName}},</p>
-<p>We have an exclusive offer for {{company}}:</p>
-<div style="background-color: #f0f8ff; padding: 20px; border-radius: 5px; margin: 20px 0;">
-<h3>🎉 Limited Time Offer</h3>
-<p>Get 20% off your next purchase!</p>
-<p><strong>Use code: SAVE20</strong></p>
-</div>
-<p>This offer expires soon, so don't wait!</p>
-<p>Best regards,<br>The Team</p>`
-    },
-    {
-      id: 'followup',
-      name: 'Follow-up Email',
-      subject: 'Following up on our conversation',
-      content: `<h2>Following Up</h2>
-<p>Hi {{firstName}},</p>
-<p>I wanted to follow up on our recent conversation about {{company}}'s needs.</p>
-<p>As discussed, I believe we can help you achieve your goals. Here's a quick recap:</p>
-<ul>
-<li>Your current challenges</li>
-<li>How we can help</li>
-<li>Next steps</li>
-</ul>
-<p>Would you be available for a brief call this week to discuss further?</p>
-<p>Best regards,<br>{{firstName}} (Your Name)</p>`
-    }
-  ];
-
   const handleTemplateSelect = (templateId: string) => {
     const template = emailTemplates.find(t => t.id === templateId);
     if (template) {
       setSelectedTemplate(templateId);
       handleChange('subject', template.subject);
-      handleChange('content', template.content);
+      handleChange('content', template.body);
     }
   };
 

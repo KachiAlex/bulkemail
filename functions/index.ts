@@ -325,3 +325,102 @@ export const adminCreateUser = functions.https.onCall(async (data: any, context:
   }
 });
 
+// Email Template Cloud Functions
+export const getEmailTemplates = functions.https.onCall(async (data: any, context: any) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  try {
+    const snapshot = await admin.firestore().collection('emailTemplates').get();
+    const templates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return { success: true, templates };
+  } catch (error: any) {
+    console.error('Error fetching email templates:', error);
+    throw new functions.https.HttpsError('internal', `Failed to fetch templates: ${error.message}`);
+  }
+});
+
+export const createEmailTemplate = functions.https.onCall(async (data: any, context: any) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const { name, subject, body, category, isActive = true } = data;
+  if (!name || !subject || !body) {
+    throw new functions.https.HttpsError('invalid-argument', 'name, subject, and body are required');
+  }
+
+  try {
+    const now = admin.firestore.FieldValue.serverTimestamp();
+    const templateRef = await admin.firestore().collection('emailTemplates').add({
+      name,
+      subject,
+      body,
+      category: category || 'general',
+      isActive,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: context.auth.uid
+    });
+
+    return { success: true, id: templateRef.id };
+  } catch (error: any) {
+    console.error('Error creating email template:', error);
+    throw new functions.https.HttpsError('internal', `Failed to create template: ${error.message}`);
+  }
+});
+
+export const updateEmailTemplate = functions.https.onCall(async (data: any, context: any) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const { id, name, subject, body, category, isActive } = data;
+  if (!id) {
+    throw new functions.https.HttpsError('invalid-argument', 'template id is required');
+  }
+
+  try {
+    const templateRef = admin.firestore().collection('emailTemplates').doc(id);
+    const templateDoc = await templateRef.get();
+    
+    if (!templateDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'Template not found');
+    }
+
+    const updateData: any = { updatedAt: admin.firestore.FieldValue.serverTimestamp() };
+    if (name !== undefined) updateData.name = name;
+    if (subject !== undefined) updateData.subject = subject;
+    if (body !== undefined) updateData.body = body;
+    if (category !== undefined) updateData.category = category;
+    if (isActive !== undefined) updateData.isActive = isActive;
+
+    await templateRef.update(updateData);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating email template:', error);
+    throw new functions.https.HttpsError('internal', `Failed to update template: ${error.message}`);
+  }
+});
+
+export const deleteEmailTemplate = functions.https.onCall(async (data: any, context: any) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const { id } = data;
+  if (!id) {
+    throw new functions.https.HttpsError('invalid-argument', 'template id is required');
+  }
+
+  try {
+    await admin.firestore().collection('emailTemplates').doc(id).delete();
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting email template:', error);
+    throw new functions.https.HttpsError('internal', `Failed to delete template: ${error.message}`);
+  }
+});
+

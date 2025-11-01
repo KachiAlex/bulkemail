@@ -75,7 +75,8 @@ import {
 import { toast } from 'react-toastify';
 import { crmAPI } from '../../services/crm-api';
 import { format } from 'date-fns';
-import { auth } from '../../../firebase-config';
+import { auth, functions } from '../../../firebase-config';
+import { httpsCallable } from 'firebase/functions';
 
 // Email Template interface
 interface EmailTemplate {
@@ -332,49 +333,23 @@ export default function Email() {
   // Template functions
   const fetchTemplates = async () => {
     try {
-      // Mock data for now - replace with actual API call
-      const mockTemplates: EmailTemplate[] = [
-        {
-          id: '1',
-          name: 'Welcome Email',
-          subject: 'Welcome to {{company_name}}!',
-          body: 'Dear {{first_name}},\n\nWelcome to {{company_name}}! We are excited to have you on board.\n\nBest regards,\n{{sender_name}}',
-          category: 'welcome',
-          isActive: true,
-          variables: ['first_name', 'company_name', 'sender_name'],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          createdBy: 'user1'
-        },
-        {
-          id: '2',
-          name: 'Follow-up Email',
-          subject: 'Following up on our conversation',
-          body: 'Hi {{first_name}},\n\nI wanted to follow up on our conversation about {{opportunity_name}}.\n\nLet me know if you have any questions.\n\nBest regards,\n{{sender_name}}',
-          category: 'follow-up',
-          isActive: true,
-          variables: ['first_name', 'opportunity_name', 'sender_name'],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          createdBy: 'user1'
-        },
-        {
-          id: '3',
-          name: 'Meeting Reminder',
-          subject: 'Reminder: Meeting tomorrow at {{meeting_time}}',
-          body: 'Hi {{first_name}},\n\nThis is a reminder about our meeting tomorrow at {{meeting_time}}.\n\nMeeting details:\n- Time: {{meeting_time}}\n- Location: {{meeting_location}}\n- Agenda: {{meeting_agenda}}\n\nSee you there!\n\nBest regards,\n{{sender_name}}',
-          category: 'meeting',
-          isActive: true,
-          variables: ['first_name', 'meeting_time', 'meeting_location', 'meeting_agenda', 'sender_name'],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          createdBy: 'user1'
-        }
-      ];
-      setTemplates(mockTemplates);
+      const getEmailTemplates = httpsCallable(functions, 'getEmailTemplates');
+      const result: any = await getEmailTemplates();
+      
+      if (result.data.success) {
+        // Convert Firestore timestamps to Date objects
+        const processedTemplates = result.data.templates.map((t: any) => ({
+          ...t,
+          createdAt: t.createdAt?.toDate ? t.createdAt.toDate() : new Date(t.createdAt),
+          updatedAt: t.updatedAt?.toDate ? t.updatedAt.toDate() : new Date(t.updatedAt),
+          variables: t.variables || []
+        }));
+        setTemplates(processedTemplates);
+      }
     } catch (error) {
       console.error('Error fetching templates:', error);
-      toast.error('Failed to load templates');
+      // Don't show error toast on initial load - just use empty array
+      setTemplates([]);
     }
   };
 
@@ -409,51 +384,48 @@ export default function Email() {
         return;
       }
 
-      // Extract variables from subject and body (works with both plain text and HTML)
-      const variables = new Set<string>();
-      const variableRegex = /\{\{([^}]+)\}\}/g;
-      let match;
-      const textContent = templateForm.subject + ' ' + templateForm.body;
-      
-      while ((match = variableRegex.exec(textContent)) !== null) {
-        variables.add(match[1]);
-      }
-
-      const templateData: EmailTemplate = {
-        id: selectedTemplate?.id || Date.now().toString(),
-        name: templateForm.name,
-        subject: templateForm.subject,
-        body: templateForm.body,
-        category: templateForm.category,
-        isActive: templateForm.isActive,
-        variables: Array.from(variables),
-        createdAt: selectedTemplate?.createdAt || new Date(),
-        updatedAt: new Date(),
-        createdBy: 'current-user'
-      };
-
       if (selectedTemplate) {
-        setTemplates(templates.map(t => t.id === selectedTemplate.id ? templateData : t));
+        // Update existing template
+        const updateEmailTemplate = httpsCallable(functions, 'updateEmailTemplate');
+        await updateEmailTemplate({
+          id: selectedTemplate.id,
+          name: templateForm.name,
+          subject: templateForm.subject,
+          body: templateForm.body,
+          category: templateForm.category,
+          isActive: templateForm.isActive
+        });
         toast.success('Template updated successfully');
       } else {
-        setTemplates([...templates, templateData]);
+        // Create new template
+        const createEmailTemplate = httpsCallable(functions, 'createEmailTemplate');
+        await createEmailTemplate({
+          name: templateForm.name,
+          subject: templateForm.subject,
+          body: templateForm.body,
+          category: templateForm.category,
+          isActive: templateForm.isActive
+        });
         toast.success('Template created successfully');
       }
 
       setTemplateDialogOpen(false);
-    } catch (error) {
+      await fetchTemplates(); // Refresh the list
+    } catch (error: any) {
       console.error('Error saving template:', error);
-      toast.error('Failed to save template');
+      toast.error(error.message || 'Failed to save template');
     }
   };
 
   const handleDeleteTemplate = async (templateId: string) => {
     try {
-      setTemplates(templates.filter(t => t.id !== templateId));
+      const deleteEmailTemplate = httpsCallable(functions, 'deleteEmailTemplate');
+      await deleteEmailTemplate({ id: templateId });
       toast.success('Template deleted successfully');
-    } catch (error) {
+      await fetchTemplates(); // Refresh the list
+    } catch (error: any) {
       console.error('Error deleting template:', error);
-      toast.error('Failed to delete template');
+      toast.error(error.message || 'Failed to delete template');
     }
   };
 
