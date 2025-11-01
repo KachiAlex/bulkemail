@@ -150,6 +150,7 @@ export default function Email() {
     category: 'general',
     isActive: true
   });
+  const [templateEditorMode, setTemplateEditorMode] = useState<'code' | 'preview'>('code');
   const [templateSearchQuery, setTemplateSearchQuery] = useState('');
   const [templateCategoryFilter, setTemplateCategoryFilter] = useState('all');
   const [templatePage, setTemplatePage] = useState(0);
@@ -1697,22 +1698,44 @@ export default function Email() {
                 />
               </Grid>
               <Grid item xs={12}>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Email Body (HTML) *
-                </Typography>
-                <TextField
-                  multiline
-                  fullWidth
-                  rows={15}
-                  value={templateForm.body}
-                  onChange={(e) => setTemplateForm({...templateForm, body: e.target.value})}
-                  placeholder="Enter HTML content. Use {{variable_name}} for dynamic content."
-                  variant="outlined"
-                  sx={{ mt: 0 }}
-                  InputProps={{
-                    style: { fontFamily: 'monospace', fontSize: '13px' }
-                  }}
-                />
+                <Box display="flex" alignItems="center" gap={2} mb={1}>
+                  <Typography variant="body2">
+                    Email Body (HTML) *
+                  </Typography>
+                  <Tabs value={templateEditorMode} onChange={(_, v) => setTemplateEditorMode(v)} sx={{ minHeight: 'auto' }}>
+                    <Tab label="Code" value="code" sx={{ minHeight: 'auto', py: 0.5, px: 1 }} />
+                    <Tab label="Preview" value="preview" sx={{ minHeight: 'auto', py: 0.5, px: 1 }} />
+                  </Tabs>
+                </Box>
+                
+                {templateEditorMode === 'code' ? (
+                  <TextField
+                    multiline
+                    fullWidth
+                    rows={15}
+                    value={templateForm.body}
+                    onChange={(e) => setTemplateForm({...templateForm, body: e.target.value})}
+                    placeholder="Enter HTML content. Use {{variable_name}} for dynamic content."
+                    variant="outlined"
+                    sx={{ mt: 0 }}
+                    InputProps={{
+                      style: { fontFamily: 'monospace', fontSize: '13px' }
+                    }}
+                  />
+                ) : (
+                  <Paper 
+                    variant="outlined" 
+                    sx={{ 
+                      mt: 0, 
+                      p: 2, 
+                      minHeight: '400px', 
+                      maxHeight: '400px', 
+                      overflow: 'auto',
+                      bgcolor: 'background.paper'
+                    }}
+                    dangerouslySetInnerHTML={{ __html: templateForm.body }}
+                  />
+                )}
               </Grid>
               <Grid item xs={12}>
                 <FormControlLabel
