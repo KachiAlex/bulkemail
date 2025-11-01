@@ -340,22 +340,24 @@ class CRMAPI {
       emailMessage.threadId = existingThread.id;
       await updateDoc(doc(db, 'emailThreads', existingThread.id), {
         messages: [...existingThread.messages, emailMessage],
-        lastMessageAt: now
+        lastMessageAt: serverTimestamp()
       });
     } else {
-      // Create new thread
+      // Create new thread with correct threadId from the start
+      emailMessage.threadId = 'temp';
       const threadRef = await addDoc(collection(db, 'emailThreads'), {
         userId: user.uid,
         subject: emailData.subject,
         participants: [user.email || '', emailData.to],
-        messages: [{ ...emailMessage, threadId: 'temp' }],
+        messages: [emailMessage],
         isRead: true,
-        lastMessageAt: now,
-        createdAt: now
+        lastMessageAt: serverTimestamp(),
+        createdAt: serverTimestamp()
       });
       // Update with correct threadId
+      emailMessage.threadId = threadRef.id;
       await updateDoc(doc(db, 'emailThreads', threadRef.id), {
-        messages: [{ ...emailMessage, threadId: threadRef.id }]
+        messages: [emailMessage]
       });
     }
   }
