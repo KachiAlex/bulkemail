@@ -441,7 +441,8 @@ class CRMAPI {
   // Email Templates
   async getEmailTemplates(): Promise<EmailTemplate[]> {
     const user = this.getCurrentUser();
-    const q = query(collection(db, 'emailTemplates'), where('createdById', '==', user.uid));
+    // Use 'createdBy' to match backend Firebase function
+    const q = query(collection(db, 'emailTemplates'), where('createdBy', '==', user.uid));
     const snapshot = await getDocs(q);
     let templates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as EmailTemplate));
     
@@ -453,7 +454,7 @@ class CRMAPI {
     const user = this.getCurrentUser();
     const docRef = await addDoc(collection(db, 'emailTemplates'), {
       ...template,
-      createdById: user.uid,
+      createdBy: user.uid, // Use 'createdBy' to match backend
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });

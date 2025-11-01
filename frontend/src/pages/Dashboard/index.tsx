@@ -329,18 +329,51 @@ export default function Dashboard() {
   };
 
   const StatCard = ({ title, value, icon, color, subtitle, trend }: any) => (
-    <Card>
+    <Card
+      sx={{
+        height: '100%',
+        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+        borderRadius: '16px',
+        border: '1px solid rgba(106, 27, 154, 0.1)',
+        background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
+        '&:hover': {
+          transform: 'translateY(-8px) scale(1.02)',
+          boxShadow: '0 20px 40px rgba(106, 27, 154, 0.2)',
+          border: '1px solid rgba(106, 27, 154, 0.3)',
+        },
+      }}
+    >
       <CardContent>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box>
-            <Typography color="textSecondary" gutterBottom variant="h6">
+            <Typography 
+              color="textSecondary" 
+              gutterBottom 
+              variant="h6"
+              sx={{ 
+                fontWeight: 'bold',
+                fontSize: '0.9rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}
+            >
               {title}
             </Typography>
-            <Typography variant="h4" component="h2">
+            <Typography 
+              variant="h4" 
+              component="h2"
+              sx={{
+                fontWeight: 'bold',
+                background: 'linear-gradient(135deg, #6a1b9a 0%, #9c27b0 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
               {value}
             </Typography>
             {subtitle && (
-              <Typography color="textSecondary" variant="body2">
+              <Typography color="textSecondary" variant="body2" sx={{ mt: 1 }}>
                 {subtitle}
               </Typography>
             )}
@@ -353,7 +386,14 @@ export default function Dashboard() {
               </Box>
             )}
           </Box>
-          <Avatar sx={{ bgcolor: color, width: 56, height: 56 }}>
+          <Avatar 
+            sx={{ 
+              bgcolor: color, 
+              width: 64, 
+              height: 64,
+              boxShadow: '0 8px 16px rgba(106, 27, 154, 0.2)',
+            }}
+          >
             {icon}
           </Avatar>
         </Box>
@@ -370,19 +410,70 @@ export default function Dashboard() {
   }
 
   return (
-    <Box p={3}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
+    <Box
+      sx={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #ffffff 0%, #f8f5ff 50%, #ffffff 100%)',
+        p: 3,
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(circle at 20% 80%, rgba(106, 27, 154, 0.03) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(156, 39, 176, 0.03) 0%, transparent 50%)',
+          pointerEvents: 'none',
+        },
+      }}
+    >
+      <Box 
+        display="flex" 
+        justifyContent="space-between" 
+        alignItems="center" 
+        mb={3}
+        sx={{ position: 'relative', zIndex: 1 }}
+      >
+        <Typography 
+          variant="h4" 
+          component="h1"
+          sx={{
+            fontWeight: 'bold',
+            background: 'linear-gradient(135deg, #6a1b9a 0%, #9c27b0 100%)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
           CRM Dashboard
         </Typography>
         <Box>
-          <IconButton onClick={fetchDashboardData} sx={{ mr: 1 }}>
+          <IconButton 
+            onClick={fetchDashboardData} 
+            sx={{ 
+              mr: 1,
+              color: '#6a1b9a',
+              '&:hover': {
+                bgcolor: 'rgba(106, 27, 154, 0.1)',
+              }
+            }}
+          >
             <Refresh />
           </IconButton>
           <Button
             variant="contained"
             startIcon={<Add />}
             onClick={handleMenuOpen}
+            sx={{
+              bgcolor: '#6a1b9a',
+              '&:hover': {
+                bgcolor: '#7b1fa2',
+                transform: 'translateY(-2px)',
+              },
+              boxShadow: '0 4px 12px rgba(106, 27, 154, 0.3)',
+              transition: 'all 0.3s ease',
+            }}
           >
             Quick Add
           </Button>
@@ -405,52 +496,84 @@ export default function Dashboard() {
       </Box>
 
       {/* Key Metrics */}
-      <Grid container spacing={3} mb={3}>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Total Contacts"
-            value={crmStats?.contacts?.total || stats?.contacts?.total || 0}
-            icon={<People />}
-            color="primary.main"
-            subtitle={`${crmStats?.contacts?.new || 0} new`}
-          />
+      <Box sx={{ position: 'relative', zIndex: 1 }}>
+        <Grid container spacing={3} mb={3}>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              title="Total Contacts"
+              value={crmStats?.contacts?.total || stats?.contacts?.total || 0}
+              icon={<People />}
+              color="primary.main"
+              subtitle={`${crmStats?.contacts?.new || 0} new`}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              title="Open Opportunities"
+              value={crmStats?.opportunities?.open || 0}
+              icon={<Business />}
+              color="success.main"
+              subtitle={`${formatCurrency(crmStats?.opportunities?.totalValue || 0)} total value`}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              title="Pending Tasks"
+              value={crmStats?.tasks?.pending || 0}
+              icon={<Assignment />}
+              color="warning.main"
+              subtitle={`${crmStats?.tasks?.overdue || 0} overdue`}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              title="Activities Today"
+              value={crmStats?.activities?.total || 0}
+              icon={<Email />}
+              color="info.main"
+            />
+          </Grid>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Open Opportunities"
-            value={crmStats?.opportunities?.open || 0}
-            icon={<Business />}
-            color="success.main"
-            subtitle={`${formatCurrency(crmStats?.opportunities?.totalValue || 0)} total value`}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Pending Tasks"
-            value={crmStats?.tasks?.pending || 0}
-            icon={<Assignment />}
-            color="warning.main"
-            subtitle={`${crmStats?.tasks?.overdue || 0} overdue`}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Activities Today"
-            value={crmStats?.activities?.total || 0}
-            icon={<Email />}
-            color="info.main"
-          />
-        </Grid>
-      </Grid>
+      </Box>
 
-      <Grid container spacing={3}>
+      <Box sx={{ position: 'relative', zIndex: 1 }}>
+        <Grid container spacing={3}>
         {/* Recent Contacts */}
         <Grid item xs={12} md={6}>
-          <Card>
+          <Card
+            sx={{
+              borderRadius: '16px',
+              border: '1px solid rgba(106, 27, 154, 0.1)',
+              boxShadow: '0 4px 12px rgba(106, 27, 154, 0.08)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                boxShadow: '0 8px 24px rgba(106, 27, 154, 0.15)',
+              },
+            }}
+          >
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6">Recent Contacts</Typography>
-                <Button size="small" onClick={() => navigate('/contacts')}>View All</Button>
+                <Typography 
+                  variant="h6"
+                  sx={{
+                    fontWeight: 'bold',
+                    color: '#6a1b9a',
+                  }}
+                >
+                  Recent Contacts
+                </Typography>
+                <Button 
+                  size="small" 
+                  onClick={() => navigate('/contacts')}
+                  sx={{
+                    color: '#9c27b0',
+                    '&:hover': {
+                      bgcolor: 'rgba(156, 39, 176, 0.1)',
+                    },
+                  }}
+                >
+                  View All
+                </Button>
               </Box>
               <List>
                 {recentContacts.map((contact, index) => (
@@ -496,11 +619,40 @@ export default function Dashboard() {
 
         {/* Recent Opportunities */}
         <Grid item xs={12} md={6}>
-          <Card>
+          <Card
+            sx={{
+              borderRadius: '16px',
+              border: '1px solid rgba(106, 27, 154, 0.1)',
+              boxShadow: '0 4px 12px rgba(106, 27, 154, 0.08)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                boxShadow: '0 8px 24px rgba(106, 27, 154, 0.15)',
+              },
+            }}
+          >
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6">Recent Opportunities</Typography>
-                <Button size="small" onClick={() => navigate('/opportunities')}>View All</Button>
+                <Typography 
+                  variant="h6"
+                  sx={{
+                    fontWeight: 'bold',
+                    color: '#6a1b9a',
+                  }}
+                >
+                  Recent Opportunities
+                </Typography>
+                <Button 
+                  size="small" 
+                  onClick={() => navigate('/opportunities')}
+                  sx={{
+                    color: '#9c27b0',
+                    '&:hover': {
+                      bgcolor: 'rgba(156, 39, 176, 0.1)',
+                    },
+                  }}
+                >
+                  View All
+                </Button>
               </Box>
               <List>
                 {recentOpportunities.map((opportunity, index) => (
@@ -539,11 +691,40 @@ export default function Dashboard() {
 
         {/* Recent Tasks */}
         <Grid item xs={12} md={6}>
-          <Card>
+          <Card
+            sx={{
+              borderRadius: '16px',
+              border: '1px solid rgba(106, 27, 154, 0.1)',
+              boxShadow: '0 4px 12px rgba(106, 27, 154, 0.08)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                boxShadow: '0 8px 24px rgba(106, 27, 154, 0.15)',
+              },
+            }}
+          >
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6">Recent Tasks</Typography>
-                <Button size="small" onClick={() => navigate('/tasks')}>View All</Button>
+                <Typography 
+                  variant="h6"
+                  sx={{
+                    fontWeight: 'bold',
+                    color: '#6a1b9a',
+                  }}
+                >
+                  Recent Tasks
+                </Typography>
+                <Button 
+                  size="small" 
+                  onClick={() => navigate('/tasks')}
+                  sx={{
+                    color: '#9c27b0',
+                    '&:hover': {
+                      bgcolor: 'rgba(156, 39, 176, 0.1)',
+                    },
+                  }}
+                >
+                  View All
+                </Button>
               </Box>
               <List>
                 {recentTasks.map((task, index) => (
@@ -582,11 +763,40 @@ export default function Dashboard() {
 
         {/* Recent Activities */}
         <Grid item xs={12} md={6}>
-          <Card>
+          <Card
+            sx={{
+              borderRadius: '16px',
+              border: '1px solid rgba(106, 27, 154, 0.1)',
+              boxShadow: '0 4px 12px rgba(106, 27, 154, 0.08)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                boxShadow: '0 8px 24px rgba(106, 27, 154, 0.15)',
+              },
+            }}
+          >
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6">Recent Activities</Typography>
-                <Button size="small" onClick={() => navigate('/activities')}>View All</Button>
+                <Typography 
+                  variant="h6"
+                  sx={{
+                    fontWeight: 'bold',
+                    color: '#6a1b9a',
+                  }}
+                >
+                  Recent Activities
+                </Typography>
+                <Button 
+                  size="small" 
+                  onClick={() => navigate('/activities')}
+                  sx={{
+                    color: '#9c27b0',
+                    '&:hover': {
+                      bgcolor: 'rgba(156, 39, 176, 0.1)',
+                    },
+                  }}
+                >
+                  View All
+                </Button>
               </Box>
               <List>
                 {recentActivities.filter(activity => activity && activity.subject).map((activity, index) => (
@@ -633,6 +843,7 @@ export default function Dashboard() {
           </Card>
         </Grid>
       </Grid>
+      </Box>
     </Box>
   );
 }

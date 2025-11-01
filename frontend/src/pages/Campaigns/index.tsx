@@ -207,7 +207,7 @@ export default function Campaigns() {
       toast.error(error.message || 'Failed to send campaign');
     }
     if (!campaign) {
-      handleMenuClose();
+    handleMenuClose();
     }
   };
 

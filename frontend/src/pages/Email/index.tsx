@@ -393,10 +393,10 @@ export default function Email() {
         const updateEmailTemplate = httpsCallable(functions, 'updateEmailTemplate');
         await updateEmailTemplate({
           id: selectedTemplate.id,
-          name: templateForm.name,
-          subject: templateForm.subject,
-          body: templateForm.body,
-          category: templateForm.category,
+        name: templateForm.name,
+        subject: templateForm.subject,
+        body: templateForm.body,
+        category: templateForm.category,
           isActive: templateForm.isActive
         });
         toast.success('Template updated successfully');
@@ -431,6 +431,19 @@ export default function Email() {
       console.error('Error deleting template:', error);
       toast.error(error.message || 'Failed to delete template');
     }
+  };
+
+  const handleDuplicateTemplate = (template: EmailTemplate) => {
+    setSelectedTemplate(null);
+    setTemplateForm({
+      name: `${template.name} (Copy)`,
+      subject: template.subject,
+      body: template.body || '',
+      category: template.category,
+      isActive: false // Set duplicate as inactive by default
+    });
+    setTemplateDialogOpen(true);
+    toast.info('Template duplicated. Edit and save to create a new template.');
   };
 
   const handleUseTemplate = (_template: EmailTemplate) => {
@@ -836,16 +849,25 @@ export default function Email() {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Box display="flex" gap={1}>
-                      <Tooltip title="Use Template">
+                    <Box display="flex" gap={0.5}>
+                      <Tooltip title="Edit Template">
                         <IconButton
                           size="small"
-                          onClick={() => handleUseTemplate(template)}
+                          onClick={() => handleEditTemplate(template)}
+                          color="primary"
+                        >
+                          <Edit />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Duplicate Template">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDuplicateTemplate(template)}
                         >
                           <ContentCopy />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Preview">
+                      <Tooltip title="Preview Template">
                         <IconButton
                           size="small"
                           onClick={() => {
@@ -856,15 +878,7 @@ export default function Email() {
                           <Preview />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Edit">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleEditTemplate(template)}
-                        >
-                          <Edit />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete">
+                      <Tooltip title="Delete Template">
                         <IconButton
                           size="small"
                           onClick={() => handleDeleteTemplate(template.id)}
@@ -1688,38 +1702,107 @@ export default function Email() {
                 </FormControl>
               </Grid>
               <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Subject *"
-                  value={templateForm.subject}
-                  onChange={(e) => setTemplateForm({...templateForm, subject: e.target.value})}
-                  placeholder="Use {{variable_name}} for dynamic content"
-                  required
-                />
+                <Box display="flex" gap={1} alignItems="center" mb={1}>
+                  <TextField
+                    fullWidth
+                    label="Subject *"
+                    value={templateForm.subject}
+                    onChange={(e) => setTemplateForm({...templateForm, subject: e.target.value})}
+                    placeholder="Use {{variable_name}} for dynamic content"
+                    required
+                  />
+                  <FormControl size="small" sx={{ minWidth: 150 }}>
+                    <Select
+                      value=""
+                      displayEmpty
+                      onChange={(e) => {
+                        const variable = e.target.value as string;
+                        if (variable) {
+                          const currentSubject = templateForm.subject || '';
+                          setTemplateForm({...templateForm, subject: currentSubject + `{{${variable}}}`});
+                        }
+                      }}
+                    >
+                      <MenuItem value="" disabled>
+                        <em>Insert Variable</em>
+                      </MenuItem>
+                      <MenuItem value="first_name">First Name</MenuItem>
+                      <MenuItem value="last_name">Last Name</MenuItem>
+                      <MenuItem value="company_name">Company</MenuItem>
+                      <MenuItem value="job_title">Job Title</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+                <Typography variant="caption" color="text.secondary">
+                  Preview: {templateForm.subject
+                    .replace(/\{\{first_name\}\}/g, 'John')
+                    .replace(/\{\{last_name\}\}/g, 'Doe')
+                    .replace(/\{\{company_name\}\}/g, 'Acme Corp')
+                    .replace(/\{\{job_title\}\}/g, 'Manager')
+                  }
+                </Typography>
               </Grid>
               <Grid item xs={12}>
-                <Box display="flex" alignItems="center" gap={2} mb={1}>
-                  <Typography variant="body2">
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                  <Typography variant="body2" fontWeight="medium">
                     Email Body (HTML) *
                   </Typography>
-                  <Tabs value={templateEditorMode} onChange={(_, v) => setTemplateEditorMode(v)} sx={{ minHeight: 'auto' }}>
-                    <Tab label="Code" value="code" sx={{ minHeight: 'auto', py: 0.5, px: 1 }} />
-                    <Tab label="Preview" value="preview" sx={{ minHeight: 'auto', py: 0.5, px: 1 }} />
-                  </Tabs>
+                  <Box display="flex" gap={1} alignItems="center">
+                    {/* Variable Quick Insert */}
+                    <FormControl size="small" sx={{ minWidth: 180 }}>
+                      <Select
+                        value=""
+                        displayEmpty
+                        onChange={(e) => {
+                          const variable = e.target.value as string;
+                          if (variable) {
+                            // Insert variable at cursor position or at end
+                            const currentBody = templateForm.body || '';
+                            const newBody = currentBody + `{{${variable}}}`;
+                            setTemplateForm({...templateForm, body: newBody});
+                          }
+                        }}
+                      >
+                        <MenuItem value="" disabled>
+                          <em>Insert Variable...</em>
+                        </MenuItem>
+                        <MenuItem value="first_name">First Name</MenuItem>
+                        <MenuItem value="last_name">Last Name</MenuItem>
+                        <MenuItem value="company_name">Company Name</MenuItem>
+                        <MenuItem value="job_title">Job Title</MenuItem>
+                        <MenuItem value="email">Email</MenuItem>
+                        <MenuItem value="phone">Phone</MenuItem>
+                        <MenuItem value="sender_name">Sender Name</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <Tabs value={templateEditorMode} onChange={(_, v) => setTemplateEditorMode(v)} sx={{ minHeight: 'auto' }}>
+                      <Tab label="Edit" value="code" sx={{ minHeight: 'auto', py: 0.5, px: 1 }} />
+                      <Tab label="Preview" value="preview" sx={{ minHeight: 'auto', py: 0.5, px: 1 }} />
+                    </Tabs>
+                  </Box>
                 </Box>
                 
                 {templateEditorMode === 'code' ? (
-                  <TextField
-                    multiline
-                    fullWidth
-                    rows={15}
+                  <Editor
+                    apiKey="m1pirpi2qyu2euxtfaggtgfvsw6fd0c9kkha4tg1h8gf352f"
                     value={templateForm.body}
-                    onChange={(e) => setTemplateForm({...templateForm, body: e.target.value})}
-                    placeholder="Enter HTML content. Use {{variable_name}} for dynamic content."
-                    variant="outlined"
-                    sx={{ mt: 0 }}
-                    InputProps={{
-                      style: { fontFamily: 'monospace', fontSize: '13px' }
+                    onEditorChange={(content: string) => {
+                      setTemplateForm({...templateForm, body: content});
+                    }}
+                    init={{
+                      height: 400,
+                      menubar: true,
+                      plugins: [
+                        'anchor', 'autolink', 'charmap', 'code', 'codesample', 'emoticons', 'fullscreen',
+                        'help', 'image', 'link', 'lists', 'media', 'preview', 'searchreplace', 'table',
+                        'visualblocks', 'visualchars', 'wordcount'
+                      ],
+                      toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table | code preview fullscreen | removeformat',
+                      content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                      branding: false,
+                      promotion: false,
+                      font_family_formats: 'Arial=arial,helvetica,sans-serif; Arial Black=arial black,avant garde; Book Antiqua=book antiqua,palatino; Comic Sans MS=comic sans ms,sans-serif; Courier New=courier new,courier; Georgia=georgia,palatino; Helvetica=helvetica; Impact=impact,chicago; Symbol=symbol; Tahoma=tahoma,arial,helvetica,sans-serif; Terminal=terminal,monaco; Times New Roman=times new roman,times; Trebuchet MS=trebuchet ms,geneva; Verdana=verdana,geneva; Webdings=webdings; Wingdings=wingdings,zapf dingbats',
+                      block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4; Heading 5=h5; Heading 6=h6; Preformatted=pre',
                     }}
                   />
                 ) : (
@@ -1727,14 +1810,27 @@ export default function Email() {
                     variant="outlined" 
                     sx={{ 
                       mt: 0, 
-                      p: 2, 
+                      p: 3, 
                       minHeight: '400px', 
-                      maxHeight: '400px', 
+                      maxHeight: '500px', 
                       overflow: 'auto',
                       bgcolor: 'background.paper'
                     }}
-                    dangerouslySetInnerHTML={{ __html: templateForm.body }}
-                  />
+                  >
+                    {/* Preview with sample data */}
+                    <Box
+                      dangerouslySetInnerHTML={{ 
+                        __html: templateForm.body
+                          .replace(/\{\{first_name\}\}/g, 'John')
+                          .replace(/\{\{last_name\}\}/g, 'Doe')
+                          .replace(/\{\{company_name\}\}/g, 'Acme Corporation')
+                          .replace(/\{\{job_title\}\}/g, 'Marketing Manager')
+                          .replace(/\{\{email\}\}/g, 'john.doe@example.com')
+                          .replace(/\{\{phone\}\}/g, '+1-555-0123')
+                          .replace(/\{\{sender_name\}\}/g, 'Your Team')
+                      }}
+                    />
+                  </Paper>
                 )}
               </Grid>
               <Grid item xs={12}>
@@ -1752,10 +1848,35 @@ export default function Email() {
 
             {/* Variable Help */}
             <Alert severity="info" sx={{ mt: 2 }}>
-              <Typography variant="body2">
-                <strong>Available Variables:</strong> Use double curly braces to insert dynamic content.
-                <br />
-                Examples: <code>{'{{first_name}}'}</code>, <code>{'{{last_name}}'}</code>, <code>{'{{company_name}}'}</code>, <code>{'{{email}}'}</code>
+              <Typography variant="body2" fontWeight="medium" gutterBottom>
+                Available Variables:
+              </Typography>
+              <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
+                {[
+                  { var: 'first_name', label: 'First Name' },
+                  { var: 'last_name', label: 'Last Name' },
+                  { var: 'company_name', label: 'Company' },
+                  { var: 'job_title', label: 'Job Title' },
+                  { var: 'email', label: 'Email' },
+                  { var: 'phone', label: 'Phone' },
+                  { var: 'sender_name', label: 'Sender Name' }
+                ].map(({ var: varName, label }) => (
+                  <Chip
+                    key={varName}
+                    label={`{{${varName}}} - ${label}`}
+                    size="small"
+                    variant="outlined"
+                    onClick={() => {
+                      const currentBody = templateForm.body || '';
+                      setTemplateForm({...templateForm, body: currentBody + `{{${varName}}}`});
+                      setTemplateEditorMode('code');
+                    }}
+                    sx={{ cursor: 'pointer' }}
+                  />
+                ))}
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                Click on any variable chip above to insert it into your template
               </Typography>
             </Alert>
 

@@ -87,8 +87,8 @@ service cloud.firestore {
     
     // Email Templates - users can only access their own templates
     match /emailTemplates/{templateId} {
-      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
-      allow read, update, delete: if (isSignedIn() && resource.data.createdById == request.auth.uid) || isAdmin();
+      allow create: if isSignedIn() && request.resource.data.createdBy == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.createdBy == request.auth.uid) || isAdmin();
     }
     
     // Dashboards - users can only access their own dashboards

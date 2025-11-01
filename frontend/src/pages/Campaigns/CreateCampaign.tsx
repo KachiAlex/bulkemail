@@ -96,17 +96,25 @@ export default function CreateCampaign() {
     }
   };
 
-  // Template processing functions
+  // Template processing functions - handles both {{variableName}} and {{variable_name}} formats
   const processTemplate = (template: string, contact: any) => {
     if (!template || !contact) return template;
     
+    // Handle both camelCase and snake_case variable formats
     return template
+      // CamelCase format
       .replace(/\{\{firstName\}\}/g, contact.firstName || '[FirstName]')
       .replace(/\{\{lastName\}\}/g, contact.lastName || '[LastName]')
       .replace(/\{\{email\}\}/g, contact.email || '[Email]')
       .replace(/\{\{company\}\}/g, contact.company || '[Company]')
       .replace(/\{\{jobTitle\}\}/g, contact.jobTitle || '[JobTitle]')
-      .replace(/\{\{phone\}\}/g, contact.phone || '[Phone]');
+      .replace(/\{\{phone\}\}/g, contact.phone || '[Phone]')
+      // Snake_case format (for backward compatibility and template format)
+      .replace(/\{\{first_name\}\}/g, contact.firstName || '[FirstName]')
+      .replace(/\{\{last_name\}\}/g, contact.lastName || '[LastName]')
+      .replace(/\{\{company_name\}\}/g, contact.company || '[Company]')
+      .replace(/\{\{job_title\}\}/g, contact.jobTitle || '[JobTitle]')
+      .replace(/\{\{sender_name\}\}/g, formData.senderName || 'The Team');
   };
 
   const getSampleContact = () => {

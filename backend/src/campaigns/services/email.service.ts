@@ -47,7 +47,7 @@ export class EmailService {
     }
 
     console.log(`Email service initialized with provider: ${this.emailProvider}`);
-  }
+    }
 
   private getFromEmail(): string {
     return this.configService.get<string>('FROM_EMAIL') || 
