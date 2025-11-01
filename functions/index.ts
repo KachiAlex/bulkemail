@@ -333,7 +333,67 @@ export const getEmailTemplates = functions.https.onCall(async (data: any, contex
 
   try {
     const snapshot = await admin.firestore().collection('emailTemplates').get();
-    const templates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    let templates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // If no templates exist, seed default ones
+    if (templates.length === 0) {
+      const now = admin.firestore.FieldValue.serverTimestamp();
+      const defaultTemplates = [
+        {
+          name: 'Welcome Email',
+          subject: 'Welcome to {{company_name}}!',
+          body: '<h2>Welcome {{first_name}}!</h2><p>Thank you for joining us at {{company_name}}. We are excited to have you on board.</p><p>Here\'s what you can expect:</p><ul><li>Personalized service tailored to your needs</li><li>Regular updates and insights</li><li>24/7 customer support</li></ul><p>If you have any questions, feel free to reach out to us.</p><p>Best regards,<br>{{sender_name}}</p>',
+          category: 'welcome',
+          isActive: true,
+          createdAt: now,
+          updatedAt: now,
+          createdBy: context.auth.uid
+        },
+        {
+          name: 'Follow-up Email',
+          subject: 'Following up on our conversation',
+          body: '<h2>Following Up</h2><p>Hi {{first_name}},</p><p>I wanted to follow up on our conversation about {{opportunity_name}}.</p><p>Let me know if you have any questions.</p><p>Best regards,<br>{{sender_name}}</p>',
+          category: 'follow-up',
+          isActive: true,
+          createdAt: now,
+          updatedAt: now,
+          createdBy: context.auth.uid
+        },
+        {
+          name: 'Promotional Email',
+          subject: 'Special Offer for {{first_name}}!',
+          body: '<h2>Special Offer Just for You!</h2><p>Hi {{first_name}},</p><p>We have an exclusive offer for {{company_name}}:</p><div style="background-color: #f0f8ff; padding: 20px; border-radius: 5px; margin: 20px 0;"><h3>🎉 Limited Time Offer</h3><p>Get 20% off your next purchase!</p><p><strong>Use code: SAVE20</strong></p></div><p>This offer expires soon, so don\'t wait!</p><p>Best regards,<br>The Team</p>',
+          category: 'promotional',
+          isActive: true,
+          createdAt: now,
+          updatedAt: now,
+          createdBy: context.auth.uid
+        },
+        {
+          name: 'Newsletter',
+          subject: 'Monthly Newsletter - {{company_name}}',
+          body: '<h2>Monthly Newsletter</h2><p>Dear {{first_name}},</p><p>Here\'s what\'s happening this month:</p><h3>Latest Updates</h3><p>We\'ve been working hard to bring you the best experience possible.</p><h3>Featured Content</h3><p>Don\'t miss out on our latest insights and tips.</p><p>Thank you for being a valued member of our community!</p><p>Best regards,<br>The {{company_name}} Team</p>',
+          category: 'newsletter',
+          isActive: true,
+          createdAt: now,
+          updatedAt: now,
+          createdBy: context.auth.uid
+        }
+      ];
+      
+      // Create default templates
+      const batch = admin.firestore().batch();
+      defaultTemplates.forEach(template => {
+        const ref = admin.firestore().collection('emailTemplates').doc();
+        batch.set(ref, template);
+      });
+      await batch.commit();
+      
+      // Re-fetch templates after seeding
+      const updatedSnapshot = await admin.firestore().collection('emailTemplates').get();
+      templates = updatedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
+    
     return { success: true, templates };
   } catch (error: any) {
     console.error('Error fetching email templates:', error);
