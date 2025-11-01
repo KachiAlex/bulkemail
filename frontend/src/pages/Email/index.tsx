@@ -366,17 +366,17 @@ export default function Email() {
   };
 
   const handleEditTemplate = (template: EmailTemplate) => {
-    console.log('Editing template body:', template.body);
-    console.log('Body type:', typeof template.body);
-    console.log('Body length:', template.body?.length);
+    console.log('Editing template:', template);
     setSelectedTemplate(template);
-    setTemplateForm({
+    const newForm = {
       name: template.name,
       subject: template.subject,
       body: template.body || '',
       category: template.category,
       isActive: template.isActive
-    });
+    };
+    console.log('Setting template form to:', newForm);
+    setTemplateForm(newForm);
     setTemplateDialogOpen(true);
   };
 
