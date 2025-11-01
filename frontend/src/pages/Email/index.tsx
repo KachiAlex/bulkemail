@@ -366,11 +366,14 @@ export default function Email() {
   };
 
   const handleEditTemplate = (template: EmailTemplate) => {
+    console.log('Editing template body:', template.body);
+    console.log('Body type:', typeof template.body);
+    console.log('Body length:', template.body?.length);
     setSelectedTemplate(template);
     setTemplateForm({
       name: template.name,
       subject: template.subject,
-      body: template.body,
+      body: template.body || '',
       category: template.category,
       isActive: template.isActive
     });
@@ -1694,22 +1697,22 @@ export default function Email() {
                 />
               </Grid>
               <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Email Body (HTML) *</InputLabel>
-                  <TextField
-                    multiline
-                    fullWidth
-                    rows={15}
-                    value={templateForm.body}
-                    onChange={(e) => setTemplateForm({...templateForm, body: e.target.value})}
-                    placeholder="Enter HTML content. Use {{variable_name}} for dynamic content."
-                    variant="outlined"
-                    sx={{ mt: 1 }}
-                    inputProps={{
-                      style: { fontFamily: 'monospace', fontSize: '13px' }
-                    }}
-                  />
-                </FormControl>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  Email Body (HTML) *
+                </Typography>
+                <TextField
+                  multiline
+                  fullWidth
+                  rows={15}
+                  value={templateForm.body}
+                  onChange={(e) => setTemplateForm({...templateForm, body: e.target.value})}
+                  placeholder="Enter HTML content. Use {{variable_name}} for dynamic content."
+                  variant="outlined"
+                  sx={{ mt: 0 }}
+                  InputProps={{
+                    style: { fontFamily: 'monospace', fontSize: '13px' }
+                  }}
+                />
               </Grid>
               <Grid item xs={12}>
                 <FormControlLabel
