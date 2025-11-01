@@ -75,6 +75,7 @@ import {
 import { toast } from 'react-toastify';
 import { crmAPI } from '../../services/crm-api';
 import { format } from 'date-fns';
+import { auth } from '../../../firebase-config';
 
 // Email Template interface
 interface EmailTemplate {
@@ -161,12 +162,15 @@ export default function Email() {
   const fetchEmails = async () => {
     try {
       const threads = await crmAPI.getEmailThreads();
+      const userEmail = auth.currentUser?.email || '';
       // Flatten thread messages into individual emails for display
       const emails = threads.flatMap(thread => 
         (thread.messages || []).map((msg: any) => {
           // Convert Firestore timestamps to Date objects
           const timestamp = msg.timestamp || thread.lastMessageAt || new Date();
           const timestampDate = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+          // Determine folder: sent if from is current user, inbox if to is current user
+          const isSent = msg.from?.toLowerCase() === userEmail.toLowerCase();
           return {
             id: msg.id,
             threadId: thread.id,
@@ -180,7 +184,7 @@ export default function Email() {
             isStarred: false,
             status: msg.isRead ? 'read' : 'unread',
             priority: 'normal',
-            folder: activeFolder,
+            folder: isSent ? 'sent' : 'inbox',
             hasAttachments: msg.attachments && msg.attachments.length > 0,
             attachmentCount: msg.attachments?.length || 0,
             attachments: msg.attachments || [],
