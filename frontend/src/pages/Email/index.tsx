@@ -1694,25 +1694,22 @@ export default function Email() {
                 />
               </Grid>
               <Grid item xs={12}>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Email Body *
-                </Typography>
-                <Editor
-                  key={`template-editor-${selectedTemplate?.id || 'new'}`}
-                  apiKey="m1pirpi2qyu2euxtfaggtgfvsw6fd0c9kkha4tg1h8gf352f"
-                  value={templateForm.body}
-                  onEditorChange={(content: string) => setTemplateForm({...templateForm, body: content})}
-                  init={{
-                    height: 400,
-                    menubar: false,
-                    plugins: 'code',
-                    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | code | removeformat',
-                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                    valid_elements: '*[*]',
-                    extended_valid_elements: '*[*]',
-                    valid_children: '+body[style]'
-                  }}
-                />
+                <FormControl fullWidth>
+                  <InputLabel>Email Body (HTML) *</InputLabel>
+                  <TextField
+                    multiline
+                    fullWidth
+                    rows={15}
+                    value={templateForm.body}
+                    onChange={(e) => setTemplateForm({...templateForm, body: e.target.value})}
+                    placeholder="Enter HTML content. Use {{variable_name}} for dynamic content."
+                    variant="outlined"
+                    sx={{ mt: 1 }}
+                    inputProps={{
+                      style: { fontFamily: 'monospace', fontSize: '13px' }
+                    }}
+                  />
+                </FormControl>
               </Grid>
               <Grid item xs={12}>
                 <FormControlLabel
