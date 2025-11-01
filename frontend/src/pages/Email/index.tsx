@@ -163,27 +163,32 @@ export default function Email() {
       const threads = await crmAPI.getEmailThreads();
       // Flatten thread messages into individual emails for display
       const emails = threads.flatMap(thread => 
-        (thread.messages || []).map((msg: any) => ({
-          id: msg.id,
-          threadId: thread.id,
-          from: msg.from,
-          to: msg.to?.[0] || '',
-          subject: msg.subject || thread.subject,
-          body: msg.body || '',
-          isHtml: msg.isHtml || false,
-          timestamp: msg.timestamp || thread.lastMessageAt || new Date(),
-          isRead: msg.isRead || false,
-          isStarred: false,
-          status: msg.isRead ? 'read' : 'unread',
-          priority: 'normal',
-          folder: activeFolder,
-          hasAttachments: msg.attachments && msg.attachments.length > 0,
-          attachmentCount: msg.attachments?.length || 0,
-          attachments: msg.attachments || [],
-          messageId: msg.messageId || '',
-          isReplied: msg.isReplied || false,
-          isForwarded: msg.isForwarded || false
-        }))
+        (thread.messages || []).map((msg: any) => {
+          // Convert Firestore timestamps to Date objects
+          const timestamp = msg.timestamp || thread.lastMessageAt || new Date();
+          const timestampDate = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+          return {
+            id: msg.id,
+            threadId: thread.id,
+            from: msg.from,
+            to: msg.to?.[0] || '',
+            subject: msg.subject || thread.subject,
+            body: msg.body || '',
+            isHtml: msg.isHtml || false,
+            timestamp: timestampDate,
+            isRead: msg.isRead || false,
+            isStarred: false,
+            status: msg.isRead ? 'read' : 'unread',
+            priority: 'normal',
+            folder: activeFolder,
+            hasAttachments: msg.attachments && msg.attachments.length > 0,
+            attachmentCount: msg.attachments?.length || 0,
+            attachments: msg.attachments || [],
+            messageId: msg.messageId || '',
+            isReplied: msg.isReplied || false,
+            isForwarded: msg.isForwarded || false
+          };
+        })
       );
       setEmails(emails);
     } catch (error: any) {
