@@ -520,7 +520,7 @@ export default function Dashboard() {
                                 color={opportunity.stage === 'closed-won' ? 'success' : 'default'}
                               />
                               <Chip
-                                label={opportunity.expectedCloseDate ? new Date(opportunity.expectedCloseDate).toLocaleDateString() : 'No date'}
+                                label={opportunity.expectedCloseDate && !isNaN(new Date(opportunity.expectedCloseDate).getTime()) ? new Date(opportunity.expectedCloseDate).toLocaleDateString() : 'No date'}
                                 size="small"
                                 variant="outlined"
                               />
@@ -554,7 +554,7 @@ export default function Dashboard() {
                         secondary={
                           <Box>
                             <Typography variant="body2" color="textSecondary">
-                              Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
+                              Due: {task.dueDate && !isNaN(new Date(task.dueDate).getTime()) ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
                             </Typography>
                             <Box display="flex" gap={1} mt={0.5}>
                               <Chip
