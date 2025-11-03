@@ -75,6 +75,7 @@ import {
 import { toast } from 'react-toastify';
 import { crmAPI } from '../../services/crm-api';
 import { format } from 'date-fns';
+import { safeConvertToDate as safeDateHelper } from '../../utils/dateHelpers';
 import { auth, functions } from '../../../firebase-config';
 import { httpsCallable } from 'firebase/functions';
 
@@ -156,6 +157,9 @@ export default function Email() {
   const [templatePage, setTemplatePage] = useState(0);
   const [templateRowsPerPage, setTemplateRowsPerPage] = useState(10);
 
+  // Use the shared safe date conversion helper
+  const safeConvertToDate = safeDateHelper;
+
   useEffect(() => {
     fetchEmails();
     fetchTemplates();
@@ -170,7 +174,7 @@ export default function Email() {
         (thread.messages || []).map((msg: any) => {
           // Convert Firestore timestamps to Date objects
           const timestamp = msg.timestamp || thread.lastMessageAt || new Date();
-          const timestampDate = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+          const timestampDate = safeConvertToDate(timestamp);
           // Determine folder: sent if from is current user, inbox if to is current user
           const isSent = msg.from?.toLowerCase() === userEmail.toLowerCase();
           return {
@@ -334,22 +338,33 @@ export default function Email() {
   // Template functions
   const fetchTemplates = async () => {
     try {
+      console.log('Fetching templates...');
       const getEmailTemplates = httpsCallable(functions, 'getEmailTemplates');
       const result: any = await getEmailTemplates();
+      console.log('Template fetch result:', result);
       
-      if (result.data.success) {
-        // Convert Firestore timestamps to Date objects
-        const processedTemplates = result.data.templates.map((t: any) => ({
+      if (result.data && result.data.success) {
+        const templates = result.data.templates || [];
+        console.log('Loaded templates:', templates.length);
+        // Convert Firestore timestamps to Date objects safely
+        const processedTemplates = templates.map((t: any) => ({
           ...t,
-          createdAt: t.createdAt?.toDate ? t.createdAt.toDate() : new Date(t.createdAt),
-          updatedAt: t.updatedAt?.toDate ? t.updatedAt.toDate() : new Date(t.updatedAt),
+          createdAt: safeConvertToDate(t.createdAt),
+          updatedAt: safeConvertToDate(t.updatedAt),
           variables: t.variables || []
         }));
         setTemplates(processedTemplates);
+        if (processedTemplates.length === 0) {
+          toast.info('No templates found. Creating default templates...');
+        }
+      } else {
+        console.error('Invalid template response:', result);
+        toast.error('Failed to load templates');
+        setTemplates([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching templates:', error);
-      // Don't show error toast on initial load - just use empty array
+      toast.error(`Error loading templates: ${error.message || 'Unknown error'}`);
       setTemplates([]);
     }
   };
@@ -388,36 +403,49 @@ export default function Email() {
         return;
       }
 
-      if (selectedTemplate) {
+      console.log('Saving template:', { selectedTemplate, templateForm });
+
+      if (selectedTemplate && selectedTemplate.id) {
         // Update existing template
+        console.log('Updating template:', selectedTemplate.id);
         const updateEmailTemplate = httpsCallable(functions, 'updateEmailTemplate');
-        await updateEmailTemplate({
+        const result = await updateEmailTemplate({
           id: selectedTemplate.id,
-        name: templateForm.name,
-        subject: templateForm.subject,
-        body: templateForm.body,
-        category: templateForm.category,
-          isActive: templateForm.isActive
-        });
-        toast.success('Template updated successfully');
-      } else {
-        // Create new template
-        const createEmailTemplate = httpsCallable(functions, 'createEmailTemplate');
-        await createEmailTemplate({
           name: templateForm.name,
           subject: templateForm.subject,
           body: templateForm.body,
           category: templateForm.category,
           isActive: templateForm.isActive
         });
+        console.log('Update result:', result);
+        toast.success('Template updated successfully');
+      } else {
+        // Create new template
+        console.log('Creating new template');
+        const createEmailTemplate = httpsCallable(functions, 'createEmailTemplate');
+        const result = await createEmailTemplate({
+          name: templateForm.name,
+          subject: templateForm.subject,
+          body: templateForm.body,
+          category: templateForm.category,
+          isActive: templateForm.isActive
+        });
+        console.log('Create result:', result);
         toast.success('Template created successfully');
       }
 
       setTemplateDialogOpen(false);
+      setSelectedTemplate(null);
       await fetchTemplates(); // Refresh the list
     } catch (error: any) {
       console.error('Error saving template:', error);
-      toast.error(error.message || 'Failed to save template');
+      const errorMessage = error.message || error.code || 'Failed to save template';
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details
+      });
+      toast.error(`Failed to save template: ${errorMessage}`);
     }
   };
 
@@ -511,9 +539,9 @@ export default function Email() {
 
     if (dateRangeFilter[0] && dateRangeFilter[1]) {
       filtered = filtered.filter(email => {
-        const emailDate = new Date(email.timestamp);
-        const startDate = new Date(dateRangeFilter[0]);
-        const endDate = new Date(dateRangeFilter[1]);
+        const emailDate = safeConvertToDate(email.timestamp);
+        const startDate = dateRangeFilter[0] ? safeConvertToDate(dateRangeFilter[0]) : new Date(0);
+        const endDate = dateRangeFilter[1] ? safeConvertToDate(dateRangeFilter[1]) : new Date();
         return emailDate >= startDate && emailDate <= endDate;
       });
     }
@@ -595,7 +623,7 @@ export default function Email() {
                       <Box display="flex" alignItems="center" gap={0.5}>
                         <Schedule fontSize="small" color="action" />
                         <Typography variant="caption">
-                          {format(new Date(email.timestamp), 'MMM d, h:mm a')}
+                          {format(safeConvertToDate(email.timestamp), 'MMM d, h:mm a')}
                         </Typography>
                       </Box>
                       {email.hasAttachments && (
@@ -667,7 +695,7 @@ export default function Email() {
                     color="secondary"
                   />
                   <Typography variant="caption" color="text.secondary">
-                    {format(new Date((threadEmails as any[])[0].timestamp), 'MMM d, yyyy')}
+                    {format(safeConvertToDate((threadEmails as any[])[0].timestamp), 'MMM d, yyyy')}
                   </Typography>
                 </Box>
               </Box>
@@ -688,7 +716,7 @@ export default function Email() {
                             {email.from}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {format(new Date(email.timestamp), 'h:mm a')}
+                            {format(safeConvertToDate(email.timestamp), 'h:mm a')}
                           </Typography>
                         </Box>
                       }
@@ -730,15 +758,44 @@ export default function Email() {
         {/* Template Header */}
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Typography variant="h5" fontWeight="bold">
-            Email Templates
+            Email Templates ({templates.length})
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={handleCreateTemplate}
-          >
-            Create Template
-          </Button>
+          <Box display="flex" gap={1} alignItems="center">
+            {templates.length === 0 && (
+              <Button
+                variant="outlined"
+                color="secondary"
+                startIcon={<Add />}
+                onClick={async () => {
+                  try {
+                    const seedTemplates = httpsCallable(functions, 'seedEmailTemplates');
+                    const result: any = await seedTemplates();
+                    if (result.data && result.data.success) {
+                      toast.success(`Created ${result.data.count || 21} templates!`);
+                      await fetchTemplates();
+                    }
+                  } catch (error: any) {
+                    toast.error(`Failed to create templates: ${error.message}`);
+                  }
+                }}
+              >
+                Create All Templates
+              </Button>
+            )}
+            <Button
+              variant="contained"
+              color="primary"
+              size="medium"
+              startIcon={<Add />}
+              onClick={handleCreateTemplate}
+              sx={{ 
+                minWidth: '150px',
+                fontWeight: 'bold'
+              }}
+            >
+              Create Template
+            </Button>
+          </Box>
         </Box>
 
         {/* Template Search and Filters */}
@@ -1458,7 +1515,7 @@ export default function Email() {
                             Date
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            {selectedEmail.timestamp ? format(new Date(selectedEmail.timestamp), 'PPP p') : 'N/A'}
+                            {selectedEmail.timestamp ? format(safeConvertToDate(selectedEmail.timestamp), 'PPP p') : 'N/A'}
                           </Typography>
                         </Box>
                       </Grid>
@@ -1801,6 +1858,9 @@ export default function Email() {
                       content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
                       branding: false,
                       promotion: false,
+                      // Disable TinyMCE templates functionality
+                      templates: false,
+                      template_toolbar: false,
                       font_family_formats: 'Arial=arial,helvetica,sans-serif; Arial Black=arial black,avant garde; Book Antiqua=book antiqua,palatino; Comic Sans MS=comic sans ms,sans-serif; Courier New=courier new,courier; Georgia=georgia,palatino; Helvetica=helvetica; Impact=impact,chicago; Symbol=symbol; Tahoma=tahoma,arial,helvetica,sans-serif; Terminal=terminal,monaco; Times New Roman=times new roman,times; Trebuchet MS=trebuchet ms,geneva; Verdana=verdana,geneva; Webdings=webdings; Wingdings=wingdings,zapf dingbats',
                       block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4; Heading 5=h5; Heading 6=h6; Preformatted=pre',
                     }}

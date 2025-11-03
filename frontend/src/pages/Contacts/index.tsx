@@ -52,10 +52,12 @@ import {
   Warning,
   Info,
   Label,
-  List
+  List,
+  LinkedIn
 } from '@mui/icons-material';
 import { crmAPI } from '../../services/crm-api';
 import { toast } from 'react-toastify';
+import ExtractLeadsDialog from './ExtractLeadsDialog';
 
 // Define Contact type locally since the import path doesn't exist
 interface Contact {
@@ -86,6 +88,7 @@ export default function Contacts() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [extractLeadsDialogOpen, setExtractLeadsDialogOpen] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [tagDialogOpen, setTagDialogOpen] = useState(false);
@@ -508,6 +511,14 @@ export default function Contacts() {
             onClick={fetchContacts}
           >
             Refresh
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<LinkedIn />}
+            onClick={() => setExtractLeadsDialogOpen(true)}
+            sx={{ borderColor: 'primary.main', color: 'primary.main' }}
+          >
+            Extract from LinkedIn
           </Button>
           <Button
             variant="contained"
@@ -1245,6 +1256,16 @@ export default function Contacts() {
           <Button onClick={() => setImportDialogOpen(false)}>Cancel</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Extract Leads Dialog */}
+      <ExtractLeadsDialog
+        open={extractLeadsDialogOpen}
+        onClose={() => setExtractLeadsDialogOpen(false)}
+        onSuccess={() => {
+          fetchContacts();
+          setExtractLeadsDialogOpen(false);
+        }}
+      />
     </Box>
   );
 }

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CRM Data Collector</title>
+  <style>
+    body {
+      width: 350px;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      margin: 0;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 18px;
+      color: #0077b5;
+    }
+    .status {
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      text-align: center;
+      font-size: 14px;
+    }
+    .status.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .status.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .status.info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    .profile-info {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+    .profile-info p {
+      margin: 5px 0;
+      font-size: 13px;
+    }
+    .profile-info strong {
+      color: #333;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #0077b5;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background-color: #005885;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .auth-section {
+      text-align: center;
+    }
+    .auth-section p {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🔍 CRM Data Collector</h1>
+  </div>
+
+  <div id="authSection" class="auth-section">
+    <p>Please log in to your CRM account</p>
+    <button id="loginBtn">Log In</button>
+  </div>
+
+  <div id="mainSection" class="hidden">
+    <div id="statusMessage" class="status hidden"></div>
+    
+    <div id="profileInfo" class="profile-info hidden">
+      <p><strong>Name:</strong> <span id="profileName">-</span></p>
+      <p><strong>Title:</strong> <span id="profileTitle">-</span></p>
+      <p><strong>Company:</strong> <span id="profileCompany">-</span></p>
+      <p><strong>Location:</strong> <span id="profileLocation">-</span></p>
+    </div>
+
+    <button id="extractBtn">Extract Profile Data</button>
+    <button id="collectBtn" class="hidden">Share to Database</button>
+    <button id="logoutBtn" style="background-color: #6c757d;">Log Out</button>
+  </div>
+
+  <div id="loadingSection" class="loading hidden">
+    <p>Processing...</p>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-functions-compat.js"></script>
+  
+  <!-- Config and Scripts -->
+  <script src="firebase-config.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
+

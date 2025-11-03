@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Icon Generator for CRM Data Collector</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      text-align: center;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin: 10px;
+      display: inline-block;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #0077b5;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 10px;
+    }
+    button:hover {
+      background-color: #005885;
+    }
+    .instructions {
+      background-color: #f0f8ff;
+      padding: 20px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .canvas-container {
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 CRM Data Collector - Icon Generator</h1>
+  
+  <div class="instructions">
+    <h2>Instructions:</h2>
+    <ol>
+      <li>Click "Generate Icons" button below</li>
+      <li>Right-click each icon and "Save image as..."</li>
+      <li>Save as:
+        <ul>
+          <li><code>icon16.png</code> (16x16)</li>
+          <li><code>icon48.png</code> (48x48)</li>
+          <li><code>icon128.png</code> (128x128)</li>
+        </ul>
+      </li>
+      <li>Place all three files in the <code>browser-extension/icons/</code> folder</li>
+    </ol>
+  </div>
+
+  <div class="canvas-container">
+    <div>
+      <canvas id="icon16" width="16" height="16"></canvas>
+      <div>16x16</div>
+    </div>
+    <div>
+      <canvas id="icon48" width="48" height="48"></canvas>
+      <div>48x48</div>
+    </div>
+    <div>
+      <canvas id="icon128" width="128" height="128"></canvas>
+      <div>128x128</div>
+    </div>
+  </div>
+
+  <button onclick="generateIcons()">Generate Icons</button>
+  <button onclick="downloadIcons()">Download All Icons</button>
+
+  <script>
+    function generateIcons() {
+      const sizes = [16, 48, 128];
+      const color = '#0077b5'; // LinkedIn blue
+      const bgColor = '#ffffff';
+      
+      sizes.forEach(size => {
+        const canvas = document.getElementById(`icon${size}`);
+        const ctx = canvas.getContext('2d');
+        
+        // Draw background
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, size, size);
+        
+        // Draw border
+        ctx.strokeStyle = color;
+        ctx.lineWidth = size > 16 ? 2 : 1;
+        ctx.strokeRect(0, 0, size, size);
+        
+        // Draw circle/search icon
+        ctx.fillStyle = color;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = size > 16 ? 2 : 1;
+        
+        // Draw circle (search icon)
+        const centerX = size * 0.4;
+        const centerY = size * 0.4;
+        const radius = size * 0.25;
+        
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Draw line (search handle)
+        const handleX = centerX + radius * 0.7;
+        const handleY = centerY + radius * 0.7;
+        const handleLength = radius * 0.8;
+        
+        ctx.beginPath();
+        ctx.moveTo(handleX, handleY);
+        ctx.lineTo(handleX + handleLength, handleY + handleLength);
+        ctx.stroke();
+        
+        // Add text "CRM" for larger sizes
+        if (size >= 48) {
+          ctx.fillStyle = color;
+          ctx.font = `bold ${size * 0.2}px Arial`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('CRM', size / 2, size * 0.75);
+        }
+      });
+    }
+
+    function downloadCanvas(canvas, filename) {
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function downloadIcons() {
+      const sizes = [16, 48, 128];
+      sizes.forEach(size => {
+        const canvas = document.getElementById(`icon${size}`);
+        downloadCanvas(canvas, `icon${size}.png`);
+      });
+    }
+
+    // Auto-generate on load
+    window.addEventListener('load', () => {
+      generateIcons();
+    });
+  </script>
+</body>
+</html>
+

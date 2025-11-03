@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Editor } from '@tinymce/tinymce-react';
 import {
@@ -21,8 +21,17 @@ import {
   InputLabel,
   Select,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  CircularProgress,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
 } from '@mui/material';
-import { ArrowBack, Send, AutoAwesome } from '@mui/icons-material';
+import { ArrowBack, Send, AutoAwesome, Description, Refresh } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { campaignsAPI, segmentsAPI, aiAPI } from '../../services/api';
 import { crmAPI } from '../../services/crm-api';
@@ -40,6 +49,8 @@ export default function CreateCampaign() {
   const [generatingContent, setGeneratingContent] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [selectAllContacts, setSelectAllContacts] = useState(false);
+  const [loadingTemplates, setLoadingTemplates] = useState(true);
+  const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -63,14 +74,29 @@ export default function CreateCampaign() {
 
   const fetchTemplates = async () => {
     try {
+      setLoadingTemplates(true);
       const getEmailTemplates = httpsCallable(functions, 'getEmailTemplates');
       const result: any = await getEmailTemplates();
-      if (result.data.success) {
-        setEmailTemplates(result.data.templates);
+      console.log('Template fetch result:', result);
+      
+      if (result.data && result.data.success) {
+        const templates = result.data.templates || [];
+        console.log('Loaded templates:', templates.length);
+        setEmailTemplates(templates);
+        if (templates.length === 0) {
+          toast.info('No templates found. Creating default templates for you...');
+        }
+      } else {
+        console.error('Invalid template response:', result);
+        toast.error('Failed to load templates. Please refresh the page.');
+        setEmailTemplates([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching templates:', error);
-      // Fallback to hardcoded templates if fetch fails
+      toast.error(`Error loading templates: ${error.message || 'Unknown error'}`);
+      setEmailTemplates([]);
+    } finally {
+      setLoadingTemplates(false);
     }
   };
 
@@ -284,29 +310,110 @@ export default function CreateCampaign() {
               {/* Email Templates */}
               {formData.type === 'email' && (
                 <Grid item xs={12}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Choose a Template (Optional)
-                  </Typography>
-                  <Grid container spacing={2}>
-                    {emailTemplates.map((template) => (
-                      <Grid item xs={6} sm={3} key={template.id}>
-                        <Card 
-                          variant={selectedTemplate === template.id ? "elevation" : "outlined"}
-                          sx={{ 
-                            cursor: 'pointer', 
-                            p: 2,
-                            border: selectedTemplate === template.id ? 2 : 1,
-                            borderColor: selectedTemplate === template.id ? 'primary.main' : 'divider'
+                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                    <Typography variant="subtitle2" fontWeight="medium">
+                      Choose a Template (Optional)
+                    </Typography>
+                    <Box display="flex" gap={1}>
+                      <Button
+                        size="small"
+                        startIcon={<Refresh />}
+                        onClick={fetchTemplates}
+                        disabled={loadingTemplates}
+                      >
+                        Refresh
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<Description />}
+                        onClick={() => setTemplateSelectorOpen(true)}
+                      >
+                        Browse All Templates ({emailTemplates.length})
+                      </Button>
+                    </Box>
+                  </Box>
+                  
+                  {loadingTemplates ? (
+                    <Box display="flex" justifyContent="center" p={3}>
+                      <CircularProgress size={24} />
+                      <Typography variant="body2" sx={{ ml: 2 }}>
+                        Loading templates...
+                      </Typography>
+                    </Box>
+                  ) : emailTemplates.length === 0 ? (
+                    <Alert severity="info" 
+                      action={
+                        <Button 
+                          size="small" 
+                          color="inherit"
+                          onClick={async () => {
+                            try {
+                              setLoadingTemplates(true);
+                              const seedTemplates = httpsCallable(functions, 'seedEmailTemplates');
+                              const result: any = await seedTemplates();
+                              console.log('Seed result:', result);
+                              if (result.data && result.data.success) {
+                                toast.success(`Created ${result.data.count || 21} templates!`);
+                                await fetchTemplates();
+                              }
+                            } catch (error: any) {
+                              console.error('Error seeding templates:', error);
+                              toast.error(`Failed to create templates: ${error.message}`);
+                            } finally {
+                              setLoadingTemplates(false);
+                            }
                           }}
-                          onClick={() => handleTemplateSelect(template.id)}
                         >
-                          <Typography variant="body2" fontWeight="medium">
-                            {template.name}
-                          </Typography>
-                        </Card>
-                      </Grid>
-                    ))}
-                  </Grid>
+                          Create Templates Now
+                        </Button>
+                      }
+                    >
+                      No templates available. Click "Create Templates Now" to generate all 21 templates, or wait for automatic creation.
+                    </Alert>
+                  ) : (
+                    <Grid container spacing={2}>
+                      {emailTemplates.slice(0, 8).map((template) => (
+                        <Grid item xs={6} sm={3} key={template.id}>
+                          <Card 
+                            variant={selectedTemplate === template.id ? "elevation" : "outlined"}
+                            sx={{ 
+                              cursor: 'pointer', 
+                              p: 2,
+                              border: selectedTemplate === template.id ? 2 : 1,
+                              borderColor: selectedTemplate === template.id ? 'primary.main' : 'divider',
+                              '&:hover': {
+                                boxShadow: 3,
+                                transform: 'translateY(-2px)',
+                                transition: 'all 0.2s'
+                              }
+                            }}
+                            onClick={() => handleTemplateSelect(template.id)}
+                          >
+                            <Typography variant="body2" fontWeight="medium" gutterBottom>
+                              {template.name}
+                            </Typography>
+                            {template.subject && (
+                              <Typography variant="caption" color="text.secondary" noWrap>
+                                {template.subject.substring(0, 40)}...
+                              </Typography>
+                            )}
+                          </Card>
+                        </Grid>
+                      ))}
+                      {emailTemplates.length > 8 && (
+                        <Grid item xs={12}>
+                          <Button
+                            fullWidth
+                            variant="outlined"
+                            onClick={() => setTemplateSelectorOpen(true)}
+                          >
+                            View All {emailTemplates.length} Templates
+                          </Button>
+                        </Grid>
+                      )}
+                    </Grid>
+                  )}
                 </Grid>
               )}
 
@@ -349,6 +456,9 @@ export default function CreateCampaign() {
                         content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
                         branding: false,
                         promotion: false,
+                        // Disable TinyMCE templates functionality
+                        templates: false,
+                        template_toolbar: false,
                         font_family_formats: 'Arial=arial,helvetica,sans-serif; Arial Black=arial black,avant garde; Book Antiqua=book antiqua,palatino; Comic Sans MS=comic sans ms,sans-serif; Courier New=courier new,courier; Georgia=georgia,palatino; Helvetica=helvetica; Impact=impact,chicago; Symbol=symbol; Tahoma=tahoma,arial,helvetica,sans-serif; Terminal=terminal,monaco; Times New Roman=times new roman,times; Trebuchet MS=trebuchet ms,geneva; Verdana=verdana,geneva; Webdings=webdings; Wingdings=wingdings,zapf dingbats',
                         block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4; Heading 5=h5; Heading 6=h6; Preformatted=pre',
                       }}
@@ -693,6 +803,80 @@ export default function CreateCampaign() {
           </Button>
         </Box>
       </Card>
+
+      {/* Template Selector Dialog */}
+      <Dialog
+        open={templateSelectorOpen}
+        onClose={() => setTemplateSelectorOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">Select Email Template</Typography>
+            <Button
+              size="small"
+              startIcon={<Refresh />}
+              onClick={fetchTemplates}
+              disabled={loadingTemplates}
+            >
+              Refresh
+            </Button>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {loadingTemplates ? (
+            <Box display="flex" justifyContent="center" p={3}>
+              <CircularProgress />
+            </Box>
+          ) : emailTemplates.length === 0 ? (
+            <Alert severity="info">
+              No templates available. Templates will be created automatically. Please close and refresh.
+            </Alert>
+          ) : (
+            <List>
+              {emailTemplates.map((template, index) => (
+                <React.Fragment key={template.id}>
+                  <ListItem
+                    button
+                    selected={selectedTemplate === template.id}
+                    onClick={() => {
+                      handleTemplateSelect(template.id);
+                      setTemplateSelectorOpen(false);
+                      toast.success(`Template "${template.name}" selected`);
+                    }}
+                  >
+                    <ListItemText
+                      primary={template.name}
+                      secondary={
+                        <Box>
+                          <Typography variant="caption" display="block">
+                            {template.subject || 'No subject'}
+                          </Typography>
+                          <Box display="flex" gap={1} mt={0.5}>
+                            <Chip
+                              label={template.category || 'general'}
+                              size="small"
+                              variant="outlined"
+                            />
+                            {template.isActive && (
+                              <Chip label="Active" size="small" color="success" />
+                            )}
+                          </Box>
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                  {index < emailTemplates.length - 1 && <Divider />}
+                </React.Fragment>
+              ))}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTemplateSelectorOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

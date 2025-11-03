@@ -1,0 +1,17 @@
+{
+  "name": "crm-data-collector",
+  "version": "1.0.0",
+  "description": "Browser extension to collect LinkedIn profile data for CRM database",
+  "scripts": {
+    "build": "echo 'Extension is ready to load in Chrome. No build step required.'"
+  },
+  "keywords": [
+    "crm",
+    "linkedin",
+    "data-collection",
+    "chrome-extension"
+  ],
+  "author": "",
+  "license": "ISC"
+}
+

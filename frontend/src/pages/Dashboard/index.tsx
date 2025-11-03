@@ -34,6 +34,7 @@ import { analyticsAPI } from '../../services/api';
 import { crmAPI } from '../../services/crm-api';
 import { Contact, Opportunity, Task, Activity } from '../../types/crm';
 import { formatCurrency } from '../../utils/currency';
+import { safeConvertToDate } from '../../utils/dateHelpers';
 
 interface DashboardStats {
   contacts: {
@@ -672,7 +673,7 @@ export default function Dashboard() {
                                 color={opportunity.stage === 'closed-won' ? 'success' : 'default'}
                               />
                               <Chip
-                                label={opportunity.expectedCloseDate && !isNaN(new Date(opportunity.expectedCloseDate).getTime()) ? new Date(opportunity.expectedCloseDate).toLocaleDateString() : 'No date'}
+                                label={opportunity.expectedCloseDate ? safeConvertToDate(opportunity.expectedCloseDate).toLocaleDateString() : 'No date'}
                                 size="small"
                                 variant="outlined"
                               />
@@ -735,7 +736,7 @@ export default function Dashboard() {
                         secondary={
                           <Box>
                             <Typography variant="body2" color="textSecondary">
-                              Due: {task.dueDate && !isNaN(new Date(task.dueDate).getTime()) ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
+                              Due: {task.dueDate ? safeConvertToDate(task.dueDate).toLocaleDateString() : 'No due date'}
                             </Typography>
                             <Box display="flex" gap={1} mt={0.5}>
                               <Chip
@@ -817,8 +818,8 @@ export default function Dashboard() {
                               {activity.timestamp ? 
                                 (() => {
                                   try {
-                                    const date = new Date(activity.timestamp);
-                                    return isNaN(date.getTime()) ? 'Invalid date' : date.toLocaleString();
+                                    const date = safeConvertToDate(activity.timestamp);
+                                    return date.toLocaleString();
                                   } catch {
                                     return 'Invalid date';
                                   }
