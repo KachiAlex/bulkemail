@@ -7,6 +7,7 @@ import { Campaign, CampaignStatus } from './entities/campaign.entity';
 import { Message, MessageStatus } from './entities/message.entity';
 import { CreateCampaignDto } from './dto/create-campaign.dto';
 import { ContactsService } from '../contacts/contacts.service';
+import { Contact } from '../contacts/entities/contact.entity';
 import { EmailService } from './services/email.service';
 import { SmsService } from './services/sms.service';
 
@@ -26,16 +27,13 @@ export class CampaignsService {
 
   async create(createCampaignDto: CreateCampaignDto, userId: string): Promise<Campaign> {
     // Get recipients
-    let recipients = [];
+    let recipients: Contact[] = [];
     
     if (createCampaignDto.segmentId) {
       recipients = await this.contactsService.getSegmentContacts(createCampaignDto.segmentId);
-    } else if (createCampaignDto.recipientContactIds?.length > 0) {
-      recipients = await Promise.all(
-        createCampaignDto.recipientContactIds.map(id => 
-          this.contactsService.findOne(id)
-        )
-      );
+    } else if (createCampaignDto.recipientContactIds && createCampaignDto.recipientContactIds.length > 0) {
+      const ids = createCampaignDto.recipientContactIds;
+      recipients = await Promise.all(ids.map(id => this.contactsService.findOne(id)));
     }
 
     if (recipients.length === 0) {

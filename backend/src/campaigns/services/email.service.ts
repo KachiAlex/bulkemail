@@ -20,25 +20,38 @@ export class EmailService {
 
   constructor(private configService: ConfigService) {
     // Determine which email provider to use
-    if (this.configService.get<string>('SENDGRID_API_KEY')) {
+    const sendgridKey = this.configService.get<string>('SENDGRID_API_KEY');
+    const sesRegion = this.configService.get<string>('AWS_SES_REGION');
+    const sesAccessKey = this.configService.get<string>('AWS_ACCESS_KEY_ID');
+    const sesSecret = this.configService.get<string>('AWS_SECRET_ACCESS_KEY');
+    const smtpHost = this.configService.get<string>('SMTP_HOST');
+
+    if (sendgridKey) {
       this.emailProvider = 'sendgrid';
-      sgMail.setApiKey(this.configService.get<string>('SENDGRID_API_KEY'));
-    } else if (this.configService.get<string>('AWS_SES_REGION')) {
+      sgMail.setApiKey(sendgridKey);
+    } else if (sesRegion) {
       this.emailProvider = 'ses';
+      if (!sesAccessKey || !sesSecret) {
+        throw new Error('AWS SES credentials are not fully configured');
+      }
       this.sesClient = new AWS.SES({
-        region: this.configService.get<string>('AWS_SES_REGION'),
-        accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY_ID'),
-        secretAccessKey: this.configService.get<string>('AWS_SECRET_ACCESS_KEY'),
+        region: sesRegion,
+        accessKeyId: sesAccessKey,
+        secretAccessKey: sesSecret,
       });
-    } else if (this.configService.get<string>('SMTP_HOST')) {
+    } else if (smtpHost) {
+      const smtpPort = this.configService.get<number>('SMTP_PORT') || 587;
+      const smtpSecure = this.configService.get<boolean>('SMTP_SECURE') || false;
+      const smtpUser = this.configService.get<string>('SMTP_USER');
+      const smtpPass = this.configService.get<string>('SMTP_PASS');
       this.emailProvider = 'smtp';
       this.smtpTransporter = nodemailer.createTransport({
-        host: this.configService.get<string>('SMTP_HOST'),
-        port: this.configService.get<number>('SMTP_PORT') || 587,
-        secure: this.configService.get<boolean>('SMTP_SECURE') || false,
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpSecure,
         auth: {
-          user: this.configService.get<string>('SMTP_USER'),
-          pass: this.configService.get<string>('SMTP_PASS'),
+          user: smtpUser,
+          pass: smtpPass,
         },
       });
     } else {
@@ -47,7 +60,7 @@ export class EmailService {
     }
 
     console.log(`Email service initialized with provider: ${this.emailProvider}`);
-    }
+  }
 
   private getFromEmail(): string {
     return this.configService.get<string>('FROM_EMAIL') || 

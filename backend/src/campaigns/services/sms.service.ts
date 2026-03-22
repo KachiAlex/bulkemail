@@ -16,7 +16,7 @@ export class SmsService {
   constructor(private configService: ConfigService) {
     const accountSid = this.configService.get<string>('TWILIO_ACCOUNT_SID');
     const authToken = this.configService.get<string>('TWILIO_AUTH_TOKEN');
-    this.fromNumber = this.configService.get<string>('TWILIO_PHONE_NUMBER');
+    this.fromNumber = this.configService.get<string>('TWILIO_PHONE_NUMBER') ?? '';
 
     if (accountSid && authToken) {
       this.client = twilio(accountSid, authToken);
@@ -24,7 +24,7 @@ export class SmsService {
   }
 
   async sendSms(options: SmsOptions): Promise<any> {
-    if (!this.client) {
+    if (!this.client || !this.fromNumber) {
       throw new Error('Twilio client not configured');
     }
 
