@@ -98,7 +98,11 @@ Format the response as JSON with "subject" and "body" fields.`;
       response_format: { type: 'json_object' },
     });
 
-    const content = JSON.parse(response.choices[0].message.content);
+    const rawContent = response.choices[0]?.message?.content;
+    if (!rawContent) {
+      throw new Error('OpenAI returned empty content for follow-up recommendations');
+    }
+    const content = JSON.parse(rawContent);
     return content;
   }
 
@@ -273,7 +277,11 @@ Format as JSON with fields: recommendations (array), priority (string), bestCont
       throw new Error('OpenAI client not configured');
     }
 
-    const file = new File([audioBuffer], filename, { type: 'audio/mpeg' });
+    const arrayBuffer = audioBuffer.buffer.slice(
+      audioBuffer.byteOffset,
+      audioBuffer.byteOffset + audioBuffer.byteLength,
+    );
+    const file = new File([arrayBuffer], filename, { type: 'audio/mpeg' });
     
     const response = await this.openai.audio.transcriptions.create({
       file: file,
@@ -316,7 +324,11 @@ Format the response as JSON with a "variations" array containing ${numVariations
       response_format: { type: 'json_object' },
     });
 
-    const content = JSON.parse(response.choices[0].message.content);
+    const rawContent = response.choices[0]?.message?.content;
+    if (!rawContent) {
+      throw new Error('OpenAI returned empty content for variations');
+    }
+    const content = JSON.parse(rawContent);
     return content.variations;
   }
 }
