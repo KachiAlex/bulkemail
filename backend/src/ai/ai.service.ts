@@ -98,10 +98,7 @@ Format the response as JSON with "subject" and "body" fields.`;
       response_format: { type: 'json_object' },
     });
 
-    const rawContent = response.choices[0]?.message?.content;
-    if (!rawContent) {
-      throw new Error('OpenAI returned empty content for follow-up recommendations');
-    }
+    const rawContent = this.getMessageContent(response, 'email generation');
     const content = JSON.parse(rawContent);
     return content;
   }
@@ -144,7 +141,8 @@ Requirements:
       max_tokens: 100,
     });
 
-    return response.choices[0].message.content.trim();
+    const rawContent = this.getMessageContent(response, 'SMS generation');
+    return rawContent.trim();
   }
 
   /**
@@ -188,7 +186,8 @@ Format the response as JSON with fields: summary, keyPoints (array), sentiment (
       response_format: { type: 'json_object' },
     });
 
-    const content = JSON.parse(response.choices[0].message.content);
+    const rawContent = this.getMessageContent(response, 'call summary');
+    const content = JSON.parse(rawContent);
     return content;
   }
 
@@ -217,7 +216,8 @@ Format the response as JSON with fields: score (number), label (string).`;
       response_format: { type: 'json_object' },
     });
 
-    const content = JSON.parse(response.choices[0].message.content);
+    const rawContent = this.getMessageContent(response, 'sentiment analysis');
+    const content = JSON.parse(rawContent);
     return content;
   }
 
@@ -265,7 +265,8 @@ Format as JSON with fields: recommendations (array), priority (string), bestCont
       response_format: { type: 'json_object' },
     });
 
-    const content = JSON.parse(response.choices[0].message.content);
+    const rawContent = this.getMessageContent(response, 'follow-up recommendations');
+    const content = JSON.parse(rawContent);
     return content;
   }
 
@@ -277,11 +278,8 @@ Format as JSON with fields: recommendations (array), priority (string), bestCont
       throw new Error('OpenAI client not configured');
     }
 
-    const arrayBuffer = audioBuffer.buffer.slice(
-      audioBuffer.byteOffset,
-      audioBuffer.byteOffset + audioBuffer.byteLength,
-    );
-    const file = new File([arrayBuffer], filename, { type: 'audio/mpeg' });
+    const uint8Array = Uint8Array.from(audioBuffer);
+    const file = new File([uint8Array], filename, { type: 'audio/mpeg' });
     
     const response = await this.openai.audio.transcriptions.create({
       file: file,
@@ -324,12 +322,20 @@ Format the response as JSON with a "variations" array containing ${numVariations
       response_format: { type: 'json_object' },
     });
 
-    const rawContent = response.choices[0]?.message?.content;
-    if (!rawContent) {
-      throw new Error('OpenAI returned empty content for variations');
-    }
+    const rawContent = this.getMessageContent(response, 'content variations');
     const content = JSON.parse(rawContent);
     return content.variations;
+  }
+
+  private getMessageContent(
+    response: OpenAI.Chat.Completions.ChatCompletion,
+    context: string,
+  ): string {
+    const content = response.choices?.[0]?.message?.content;
+    if (!content) {
+      throw new Error(`OpenAI returned empty content for ${context}`);
+    }
+    return content;
   }
 }
 
