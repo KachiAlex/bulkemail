@@ -19,7 +19,7 @@ export class TelephonyService {
   ) {
     const accountSid = this.configService.get<string>('TWILIO_ACCOUNT_SID');
     const authToken = this.configService.get<string>('TWILIO_AUTH_TOKEN');
-    this.twilioNumber = this.configService.get<string>('TWILIO_PHONE_NUMBER');
+    this.twilioNumber = this.configService.get<string>('TWILIO_PHONE_NUMBER') ?? '';
 
     if (accountSid && authToken) {
       this.twilioClient = twilio(accountSid, authToken);
@@ -27,7 +27,7 @@ export class TelephonyService {
   }
 
   async initiateCall(createCallDto: CreateCallDto, userId: string): Promise<Call> {
-    if (!this.twilioClient) {
+    if (!this.twilioClient || !this.twilioNumber) {
       throw new Error('Twilio client not configured');
     }
 
