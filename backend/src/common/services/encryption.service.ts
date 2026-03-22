@@ -13,6 +13,9 @@ export class EncryptionService {
 
   constructor(private configService: ConfigService) {
     const encryptionKey = this.configService.get<string>('ENCRYPTION_KEY');
+    if (!encryptionKey) {
+      throw new Error('ENCRYPTION_KEY is not configured');
+    }
     this.key = crypto.scryptSync(encryptionKey, 'salt', this.keyLength);
   }
 

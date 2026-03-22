@@ -121,7 +121,7 @@ export class ContactsService {
       skip_empty_lines: true,
     });
 
-    const errors = [];
+    const errors: { record: any; error: string }[] = [];
     let imported = 0;
 
     for (const record of records) {
@@ -143,8 +143,9 @@ export class ContactsService {
 
         await this.create(contactDto);
         imported++;
-      } catch (error) {
-        errors.push({ record, error: error.message });
+      } catch (error: any) {
+        const message = typeof error?.message === 'string' ? error.message : 'Unknown error';
+        errors.push({ record, error: message });
       }
     }
 
