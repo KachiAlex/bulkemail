@@ -155,8 +155,8 @@ export default function ExtractLeadsDialog({ open, onClose, onSuccess }: Extract
     let failed = 0;
 
     try {
-      for (const index of selectedLeads) {
-        const result = extractedLeads[index];
+      for (const leadIndex of selectedLeads) {
+        const result = extractedLeads[leadIndex];
         if (result.success && result.lead) {
           try {
             await handleImportLead(result.lead);

@@ -620,7 +620,7 @@ export default function AdminPage() {
                 </PieChart>
               </ResponsiveContainer>
               <Stack direction="row" spacing={2} flexWrap="wrap" mt={2}>
-                {roleDistributionData.map((item, index) => (
+                {roleDistributionData.map((item) => (
                   <Chip
                     key={item.name}
                     label={`${item.name}: ${item.value}`}
