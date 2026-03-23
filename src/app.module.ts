@@ -15,6 +15,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { CommonModule } from './common/common.module';
 import { SeedsModule } from './seeds/seeds.module';
 import { HealthController } from './health.controller';
+import { SeedController } from './seed.controller';
 
 @Module({
   imports: [
@@ -68,7 +69,7 @@ import { HealthController } from './health.controller';
     AiModule,
     AnalyticsModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, SeedController],
 })
 export class AppModule {}
 
