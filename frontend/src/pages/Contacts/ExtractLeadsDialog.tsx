@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -9,7 +9,6 @@ import {
   Box,
   Typography,
   LinearProgress,
-  Alert,
   IconButton,
   Paper,
   Chip,
@@ -27,8 +26,7 @@ import {
   Checkbox,
   Card,
   CardContent,
-  Stack,
-  Divider
+  Stack
 } from '@mui/material';
 import { 
   Close, 
@@ -40,13 +38,10 @@ import {
   Business, 
   Work,
   CheckCircle,
-  Error as ErrorIcon,
-  ContentCopy
+  Error as ErrorIcon
 } from '@mui/icons-material';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../firebase-config';
 import { toast } from 'react-toastify';
-import { crmAPI } from '../../services/crm-api';
+import { contactsApi } from '../../services/contactsApi';
 
 interface ExtractLeadsDialogProps {
   open: boolean;
@@ -86,15 +81,8 @@ export default function ExtractLeadsDialog({ open, onClose, onSuccess }: Extract
     setExtractedLead(null);
     
     try {
-      const extractLead = httpsCallable(functions, 'extractLeadFromLinkedIn');
-      const result: any = await extractLead({ linkedInUrl: linkedInUrl.trim(), provider });
-      
-      if (result.data.success && result.data.lead) {
-        setExtractedLead(result.data.lead);
-        toast.success('Lead extracted successfully!');
-      } else {
-        toast.error('Failed to extract lead');
-      }
+      // Placeholder: Replace with backend API when available
+      toast.info('LinkedIn extraction will be available in the next update');
     } catch (error: any) {
       console.error('Error extracting lead:', error);
       toast.error(error.message || 'Failed to extract lead');
@@ -113,15 +101,8 @@ export default function ExtractLeadsDialog({ open, onClose, onSuccess }: Extract
     setExtractedLeads([]);
     
     try {
-      const bulkExtract = httpsCallable(functions, 'bulkExtractLeads');
-      const result: any = await bulkExtract({ linkedInUrls, provider });
-      
-      if (result.data.success) {
-        setExtractedLeads(result.data.results || []);
-        toast.success(`Extracted ${result.data.extracted} out of ${result.data.total} leads`);
-      } else {
-        toast.error('Failed to bulk extract leads');
-      }
+      // Placeholder: Replace with backend API when available
+      toast.info('Bulk LinkedIn extraction will be available in the next update');
     } catch (error: any) {
       console.error('Error bulk extracting leads:', error);
       toast.error(error.message || 'Failed to bulk extract leads');
@@ -143,7 +124,7 @@ export default function ExtractLeadsDialog({ open, onClose, onSuccess }: Extract
 
   const handleImportLead = async (lead: ExtractedLead) => {
     try {
-      await crmAPI.createContact({
+      await contactsApi.create({
         firstName: lead.firstName || '',
         lastName: lead.lastName || '',
         email: lead.email || '',
@@ -151,7 +132,7 @@ export default function ExtractLeadsDialog({ open, onClose, onSuccess }: Extract
         company: lead.company || '',
         jobTitle: lead.jobTitle || '',
         status: 'new',
-        category: 'individual',
+        category: 'lead',
         tags: ['linkedin_extracted'],
         source: lead.source || 'linkedin_extraction'
       });

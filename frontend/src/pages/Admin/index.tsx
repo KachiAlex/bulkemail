@@ -20,7 +20,6 @@ import {
   Chip,
   Stack,
   Grid,
-  Paper,
   Tabs,
   Tab,
   InputAdornment,
@@ -33,7 +32,7 @@ import {
   CircularProgress,
   Switch,
   FormControlLabel,
-  Tooltip,
+  Tooltip as MuiTooltip,
   SelectChangeEvent,
 } from '@mui/material';
 import { 
@@ -42,7 +41,6 @@ import {
   Refresh, 
   Add, 
   Search,
-  FilterList,
   Download,
   People,
   PersonAdd,
@@ -50,8 +48,6 @@ import {
   Security,
   BarChart,
   Settings,
-  Visibility,
-  VisibilityOff,
   ArrowUpward,
   ArrowDownward,
 } from '@mui/icons-material';
@@ -64,7 +60,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   Legend,
   ResponsiveContainer,
 } from 'recharts';
@@ -577,7 +573,7 @@ export default function AdminPage() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
-                  <Tooltip />
+                  <RechartsTooltip />
                   <Legend />
                   <Line 
                     type="monotone" 
@@ -620,7 +616,7 @@ export default function AdminPage() {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <RechartsTooltip />
                 </PieChart>
               </ResponsiveContainer>
               <Stack direction="row" spacing={2} flexWrap="wrap" mt={2}>
@@ -853,14 +849,14 @@ export default function AdminPage() {
                         />
                       </TableCell>
                       <TableCell>
-                        <Tooltip title={u.status === 'active' ? 'Click to deactivate' : 'Click to activate'}>
+                        <MuiTooltip title={u.status === 'active' ? 'Click to deactivate' : 'Click to activate'}>
                           <Switch
                             size="small"
                             checked={u.status !== 'inactive'}
                             onChange={() => toggleUserStatus(u.id, u.status || 'active')}
                             disabled={!canManage || currentUser?.id === u.id}
                           />
-                        </Tooltip>
+                        </MuiTooltip>
                       </TableCell>
                       <TableCell>
                         {u.createdAt ? (
@@ -879,7 +875,7 @@ export default function AdminPage() {
                         )}
                       </TableCell>
                       <TableCell align="right">
-                        <Tooltip title="Edit User">
+                        <MuiTooltip title="Edit User">
                           <IconButton 
                             size="small" 
                             disabled={!canManage} 
@@ -887,8 +883,8 @@ export default function AdminPage() {
                           >
                             <Edit />
                           </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete User">
+                        </MuiTooltip>
+                        <MuiTooltip title="Delete User">
                           <IconButton 
                             size="small" 
                             color="error" 
@@ -897,7 +893,7 @@ export default function AdminPage() {
                           >
                             <Delete />
                           </IconButton>
-                        </Tooltip>
+                        </MuiTooltip>
                       </TableCell>
                     </TableRow>
                   ))
