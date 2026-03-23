@@ -95,7 +95,7 @@ export default function Campaigns() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
-    dispatch(fetchCampaigns()).unwrap().catch(() => {
+    dispatch(fetchCampaigns(undefined)).unwrap().catch(() => {
       toast.error('Failed to load campaigns');
     });
   }, [dispatch]);
@@ -103,12 +103,12 @@ export default function Campaigns() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        dispatch(fetchCampaigns());
+        dispatch(fetchCampaigns(undefined));
       }
     };
 
     const handleFocus = () => {
-      dispatch(fetchCampaigns());
+      dispatch(fetchCampaigns(undefined));
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -122,7 +122,7 @@ export default function Campaigns() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(fetchCampaigns());
+    dispatch(fetchCampaigns(undefined));
   };
 
   const filteredCampaigns = useMemo(() => {
@@ -221,7 +221,7 @@ export default function Campaigns() {
     setStatusFilter([]);
     setTypeFilter([]);
     setDateRangeFilter(['', '']);
-    dispatch(fetchCampaigns());
+    dispatch(fetchCampaigns(undefined));
   };
 
   const getCampaignStats = () => {
@@ -518,7 +518,7 @@ export default function Campaigns() {
               </Grid>
             </Grid>
             <Box mt={2} display="flex" gap={1}>
-              <Button size="small" onClick={() => dispatch(fetchCampaigns())}>
+              <Button size="small" onClick={() => dispatch(fetchCampaigns(undefined))}>
                 Apply Filters
               </Button>
               <Button size="small" onClick={clearFilters}>

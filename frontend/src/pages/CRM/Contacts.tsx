@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -37,8 +37,16 @@ import {
   Business,
   ImportExport
 } from '@mui/icons-material';
-import { crmAPI } from '../../services/crm-api';
+import { toast } from 'react-toastify';
 import { Contact } from '../../types/crm';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import {
+  fetchContacts,
+  createContact as createContactThunk,
+  updateContactThunk,
+  deleteContactThunk,
+  bulkDeleteContacts as bulkDeleteContactsThunk,
+} from '../../store/slices/contactsSlice';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -62,8 +70,8 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default function ContactsPage() {
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
+  const dispatch = useAppDispatch();
+  const { contacts } = useAppSelector((state) => state.contacts);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -71,6 +79,10 @@ export default function ContactsPage() {
   const [tabValue, setTabValue] = useState(0);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState<string | null>(null);
 
   // Form state for creating/editing contacts
   const [formData, setFormData] = useState({
@@ -88,55 +100,91 @@ export default function ContactsPage() {
   });
 
   useEffect(() => {
-    fetchContacts();
-  }, []);
+    dispatch(fetchContacts(undefined)).unwrap().catch(() => {
+      toast.error('Failed to load contacts');
+    });
+  }, [dispatch]);
 
-  useEffect(() => {
-    filterContacts();
-  }, [contacts, searchTerm, statusFilter, categoryFilter]);
-
-  const fetchContacts = async () => {
-    try {
-      const data = await crmAPI.getContacts();
-      setContacts(data);
-    } catch (error) {
-      console.error('Error fetching contacts:', error);
-    }
-  };
-
-  const filterContacts = () => {
+  const filteredContacts = useMemo(() => {
     let filtered = contacts;
 
-    // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(contact =>
+      filtered = filtered.filter((contact) =>
         `${contact.firstName} ${contact.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         contact.company?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Status filter
     if (statusFilter) {
-      filtered = filtered.filter(contact => contact.status === statusFilter);
+      filtered = filtered.filter((contact) => contact.status === statusFilter);
     }
 
-    // Category filter
     if (categoryFilter) {
-      filtered = filtered.filter(contact => contact.category === categoryFilter);
+      filtered = filtered.filter((contact) => contact.category === categoryFilter);
     }
 
-    setFilteredContacts(filtered);
-  };
+    return filtered;
+  }, [contacts, searchTerm, statusFilter, categoryFilter]);
 
   const handleCreateContact = async () => {
     try {
-      await crmAPI.createContact(formData);
+      await dispatch(createContactThunk(formData)).unwrap();
       setCreateDialogOpen(false);
       resetForm();
-      fetchContacts();
     } catch (error) {
       console.error('Error creating contact:', error);
+      toast.error('Failed to create contact');
+    }
+  };
+
+  const handleEditContact = (contact: Contact) => {
+    setEditingContact(contact);
+    setFormData({
+      firstName: contact.firstName,
+      lastName: contact.lastName,
+      email: contact.email,
+      phone: contact.phone || '',
+      jobTitle: contact.jobTitle || '',
+      company: contact.company || '',
+      status: contact.status,
+      category: contact.category,
+      tags: contact.tags,
+      leadScore: contact.leadScore || 50,
+      source: contact.source,
+    });
+    setEditDialogOpen(true);
+    setAnchorEl(null);
+  };
+
+  const handleUpdateContact = async () => {
+    if (!editingContact) return;
+    try {
+      await dispatch(updateContactThunk({ id: editingContact.id, payload: formData })).unwrap();
+      setEditDialogOpen(false);
+      setEditingContact(null);
+      resetForm();
+    } catch (error) {
+      console.error('Error updating contact:', error);
+      toast.error('Failed to update contact');
+    }
+  };
+
+  const openDeleteDialog = (id: string) => {
+    setContactToDelete(id);
+    setDeleteDialogOpen(true);
+    setAnchorEl(null);
+  };
+
+  const handleDeleteContact = async () => {
+    if (!contactToDelete) return;
+    try {
+      await dispatch(deleteContactThunk(contactToDelete)).unwrap();
+      setDeleteDialogOpen(false);
+      setContactToDelete(null);
+    } catch (error) {
+      console.error('Error deleting contact:', error);
+      toast.error('Failed to delete contact');
     }
   };
 
@@ -147,7 +195,7 @@ export default function ContactsPage() {
     try {
       switch (action) {
         case 'delete':
-          await crmAPI.bulkDeleteContacts(selectedContacts);
+          await dispatch(bulkDeleteContactsThunk(selectedContacts)).unwrap();
           break;
         case 'updateStatus':
           // You can implement bulk status update here
@@ -157,9 +205,9 @@ export default function ContactsPage() {
           break;
       }
       setSelectedContacts([]);
-      fetchContacts();
     } catch (error) {
       console.error('Error performing bulk action:', error);
+      toast.error('Bulk action failed');
     }
   };
 
@@ -279,7 +327,7 @@ export default function ContactsPage() {
               size="small"
               onClick={(e) => {
                 setAnchorEl(e.currentTarget);
-                // Handle contact selection
+                setEditingContact(contact);
               }}
             >
               <MoreVert />
@@ -574,7 +622,7 @@ export default function ContactsPage() {
         open={Boolean(anchorEl)}
         onClose={() => setAnchorEl(null)}
       >
-        <MenuItem onClick={() => setAnchorEl(null)}>
+        <MenuItem onClick={() => editingContact && handleEditContact(editingContact)}>
           <Edit sx={{ mr: 1 }} />
           Edit
         </MenuItem>
@@ -590,11 +638,121 @@ export default function ContactsPage() {
           <Business sx={{ mr: 1 }} />
           Create Opportunity
         </MenuItem>
-        <MenuItem onClick={() => setAnchorEl(null)} sx={{ color: 'error.main' }}>
+        <MenuItem onClick={() => editingContact && openDeleteDialog(editingContact.id)} sx={{ color: 'error.main' }}>
           <Delete sx={{ mr: 1 }} />
           Delete
         </MenuItem>
       </Menu>
+
+      {/* Edit Contact Dialog */}
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Edit Contact</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="First Name"
+                value={formData.firstName}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                required
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Last Name"
+                value={formData.lastName}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                required
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Phone"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Company"
+                value={formData.company}
+                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Job Title"
+                value={formData.jobTitle}
+                onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as Contact['status'] })}
+                  label="Status"
+                >
+                  <MenuItem value="new">New</MenuItem>
+                  <MenuItem value="contacted">Contacted</MenuItem>
+                  <MenuItem value="qualified">Qualified</MenuItem>
+                  <MenuItem value="proposal">Proposal</MenuItem>
+                  <MenuItem value="negotiation">Negotiation</MenuItem>
+                  <MenuItem value="closed-won">Closed Won</MenuItem>
+                  <MenuItem value="closed-lost">Closed Lost</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value as Contact['category'] })}
+                  label="Category"
+                >
+                  <MenuItem value="lead">Lead</MenuItem>
+                  <MenuItem value="prospect">Prospect</MenuItem>
+                  <MenuItem value="customer">Customer</MenuItem>
+                  <MenuItem value="partner">Partner</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleUpdateContact} variant="contained">Save Changes</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Delete Contact</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this contact? This action cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleDeleteContact} color="error" variant="contained">Delete</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

@@ -45,7 +45,7 @@ export default function CampaignDetails() {
 
   useEffect(() => {
     if (id && !campaign) {
-      dispatch(fetchCampaigns()).unwrap().catch(() => {
+      dispatch(fetchCampaigns(undefined)).unwrap().catch(() => {
         toast.error('Failed to load campaign');
       });
     }
@@ -69,7 +69,7 @@ export default function CampaignDetails() {
       await campaignsApi.update(id, editFormData);
       toast.success('Campaign updated successfully');
       setEditDialogOpen(false);
-      dispatch(fetchCampaigns());
+      dispatch(fetchCampaigns(undefined));
     } catch (error: any) {
       toast.error('Failed to update campaign');
     } finally {
@@ -82,7 +82,7 @@ export default function CampaignDetails() {
     try {
       await campaignsApi.send(id);
       toast.success('Campaign sent successfully');
-      dispatch(fetchCampaigns());
+      dispatch(fetchCampaigns(undefined));
     } catch (error: any) {
       toast.error('Failed to send campaign');
     }
@@ -93,7 +93,7 @@ export default function CampaignDetails() {
     try {
       await campaignsApi.pause(id);
       toast.success('Campaign paused successfully');
-      dispatch(fetchCampaigns());
+      dispatch(fetchCampaigns(undefined));
     } catch (error: any) {
       toast.error('Failed to pause campaign');
     }
