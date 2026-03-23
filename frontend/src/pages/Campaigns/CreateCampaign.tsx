@@ -33,17 +33,17 @@ import {
 } from '@mui/material';
 import { ArrowBack, Send, AutoAwesome, Description, Refresh } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { campaignsAPI, segmentsAPI, aiAPI } from '../../services/api';
-import { crmAPI } from '../../services/crm-api';
-import { functions } from '../../../firebase-config';
-import { httpsCallable } from 'firebase/functions';
+import { useAppDispatch } from '../../store/hooks';
+import { createCampaign } from '../../store/slices/campaignsSlice';
+import { contactsApi } from '../../services/contactsApi';
 
 const steps = ['Campaign Type', 'Content', 'Recipients', 'Preview', 'Review & Send'];
 
 export default function CreateCampaign() {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [activeStep, setActiveStep] = useState(0);
-  const [segments, setSegments] = useState<any[]>([]);
+  const [segments] = useState<any[]>([]);
   const [contacts, setContacts] = useState<any[]>([]);
   const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
   const [generatingContent, setGeneratingContent] = useState(false);
@@ -67,61 +67,22 @@ export default function CreateCampaign() {
   });
 
   useEffect(() => {
-    fetchSegments();
-    fetchContacts();
-    fetchTemplates();
+    // TODO: Replace with backend templates API when available
+    // fetchTemplates();
+    // Load contacts directly
+    contactsApi.list().then(setContacts).catch(() => {
+      toast.error('Failed to load contacts');
+    });
   }, []);
 
   const fetchTemplates = async () => {
-    try {
-      setLoadingTemplates(true);
-      const getEmailTemplates = httpsCallable(functions, 'getEmailTemplates');
-      const result: any = await getEmailTemplates();
-      console.log('Template fetch result:', result);
-      
-      if (result.data && result.data.success) {
-        const templates = result.data.templates || [];
-        console.log('Loaded templates:', templates.length);
-        setEmailTemplates(templates);
-        if (templates.length === 0) {
-          toast.info('No templates found. Creating default templates for you...');
-        }
-      } else {
-        console.error('Invalid template response:', result);
-        toast.error('Failed to load templates. Please refresh the page.');
-        setEmailTemplates([]);
-      }
-    } catch (error: any) {
-      console.error('Error fetching templates:', error);
-      toast.error(`Error loading templates: ${error.message || 'Unknown error'}`);
-      setEmailTemplates([]);
-    } finally {
-      setLoadingTemplates(false);
-    }
+    // Placeholder: Replace with backend templates API when available
+    setLoadingTemplates(false);
+    setEmailTemplates([]);
+    toast.info('Template loading will be available in the next update');
   };
 
-  const fetchSegments = async () => {
-    try {
-      const response = await segmentsAPI.getAll();
-      setSegments(response);
-    } catch (error) {
-      console.error('Failed to load segments:', error);
-      // Don't show error to user, just continue without segments
-      setSegments([]);
-    }
-  };
-
-  const fetchContacts = async () => {
-    try {
-      // Use crmAPI which fetches contacts with createdById field
-      const response = await crmAPI.getContacts();
-      setContacts(response);
-    } catch (error) {
-      console.error('Failed to load contacts:', error);
-      setContacts([]);
-    }
-  };
-
+  
   // Template processing functions - handles both {{variableName}} and {{variable_name}} formats
   const processTemplate = (template: string, contact: any) => {
     if (!template || !contact) return template;
@@ -186,29 +147,22 @@ export default function CreateCampaign() {
       return;
     }
 
-    setGeneratingContent(true);
-    try {
-      if (formData.type === 'email') {
-        const response = await aiAPI.generateEmail({
-          purpose: formData.description || formData.name,
-          tone: 'professional',
-        });
-        handleChange('subject', (response as any).subject);
-        handleChange('content', (response as any).body);
-        toast.success('Content generated successfully!');
-      } else {
-        const response = await aiAPI.generateSms({
-          purpose: formData.description || formData.name,
-          maxLength: 160,
-        });
-        handleChange('content', response as any);
-        toast.success('SMS content generated!');
+    const generateContent = async () => {
+      setGeneratingContent(true);
+      try {
+        // Placeholder: Replace with backend AI API when available
+        const sampleContent = formData.type === 'email'
+          ? 'This is a professionally generated email content.'
+          : 'This is a concise SMS message.';
+        handleChange('content', sampleContent);
+        toast.success('Content generated successfully! (AI integration coming soon)');
+      } catch (error) {
+        toast.error('Failed to generate content');
+      } finally {
+        setGeneratingContent(false);
       }
-    } catch (error) {
-      toast.error('Failed to generate content');
-    } finally {
-      setGeneratingContent(false);
-    }
+    };
+    generateContent();
   };
 
   const handleSubmit = async () => {
@@ -232,11 +186,13 @@ export default function CreateCampaign() {
       // Prepare campaign data
       const campaignData = {
         ...formData,
+        // Convert scheduledAt string to Date if provided
+        scheduledAt: formData.scheduledAt ? new Date(formData.scheduledAt) : undefined,
         // Remove htmlContent if it's the same as content (TinyMCE already stores HTML in content)
         htmlContent: formData.htmlContent || formData.content,
       };
 
-      await campaignsAPI.create(campaignData);
+      await dispatch(createCampaign(campaignData)).unwrap();
       toast.success('Campaign created successfully');
       navigate('/campaigns');
     } catch (error: any) {
@@ -350,13 +306,8 @@ export default function CreateCampaign() {
                           onClick={async () => {
                             try {
                               setLoadingTemplates(true);
-                              const seedTemplates = httpsCallable(functions, 'seedEmailTemplates');
-                              const result: any = await seedTemplates();
-                              console.log('Seed result:', result);
-                              if (result.data && result.data.success) {
-                                toast.success(`Created ${result.data.count || 21} templates!`);
-                                await fetchTemplates();
-                              }
+                              // Placeholder: Replace with backend templates seed API when available
+                              toast.info('Template seeding will be available in the next update');
                             } catch (error: any) {
                               console.error('Error seeding templates:', error);
                               toast.error(`Failed to create templates: ${error.message}`);

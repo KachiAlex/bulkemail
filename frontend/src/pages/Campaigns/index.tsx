@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -42,7 +42,14 @@ import {
   Download,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { campaignsAPI } from '../../services/api';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import {
+  fetchCampaigns,
+  deleteCampaign as deleteCampaignThunk,
+  sendCampaign as sendCampaignThunk,
+  pauseCampaign as pauseCampaignThunk,
+  duplicateCampaign as duplicateCampaignThunk,
+} from '../../store/slices/campaignsSlice';
 import { format } from 'date-fns';
 
 const campaignTypeIcons = {
@@ -61,8 +68,8 @@ const statusColors: Record<string, any> = {
 
 export default function Campaigns() {
   const navigate = useNavigate();
-  const [campaigns, setCampaigns] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useAppDispatch();
+  const { campaigns, loading } = useAppSelector((state) => state.campaigns);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   
@@ -75,80 +82,117 @@ export default function Campaigns() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
-    fetchCampaigns();
-  }, []);
+    dispatch(fetchCampaigns()).unwrap().catch(() => {
+      toast.error('Failed to load campaigns');
+    });
+  }, [dispatch]);
 
-  // Refresh campaigns when the component becomes visible or window gains focus
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        fetchCampaigns();
+        dispatch(fetchCampaigns());
       }
     };
 
     const handleFocus = () => {
-      fetchCampaigns();
+      dispatch(fetchCampaigns());
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
-    
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
     };
-  }, []);
-
-  const fetchCampaigns = async () => {
-    try {
-      const response = await campaignsAPI.getAll();
-      // Convert Firestore timestamps to Date objects
-      const campaignsWithDates = response.map((campaign: any) => ({
-        ...campaign,
-        createdAt: campaign.createdAt?.toDate ? campaign.createdAt.toDate() : campaign.createdAt,
-        updatedAt: campaign.updatedAt?.toDate ? campaign.updatedAt.toDate() : campaign.updatedAt,
-        sentAt: campaign.sentAt?.toDate ? campaign.sentAt.toDate() : campaign.sentAt,
-        scheduledAt: campaign.scheduledAt?.toDate ? campaign.scheduledAt.toDate() : campaign.scheduledAt,
-      }));
-      setCampaigns(campaignsWithDates);
-    } catch (error) {
-      toast.error('Failed to load campaigns');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [dispatch]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchCampaigns();
+    dispatch(fetchCampaigns());
   };
+
+  const filteredCampaigns = useMemo(() => {
+    let filtered = campaigns;
+
+    if (searchQuery) {
+      filtered = filtered.filter((campaign) =>
+        campaign.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (statusFilter.length > 0) {
+      filtered = filtered.filter((campaign) => statusFilter.includes(campaign.status));
+    }
+
+    if (typeFilter.length > 0) {
+      filtered = filtered.filter((campaign) => typeFilter.includes(campaign.type));
+    }
+
+    if (dateRangeFilter[0] && dateRangeFilter[1]) {
+      filtered = filtered.filter((campaign) => {
+        const campaignDate = new Date(campaign.createdAt);
+        return campaignDate >= new Date(dateRangeFilter[0]) && campaignDate <= new Date(dateRangeFilter[1]);
+      });
+    }
+
+    return filtered;
+  }, [campaigns, searchQuery, statusFilter, typeFilter, dateRangeFilter]);
 
   const handleDuplicate = async () => {
     if (!selectedCampaign) return;
-    
+
     try {
-      // Create a copy of the campaign
-      const duplicateData = {
-        ...selectedCampaign,
-        name: `${selectedCampaign.name} (Copy)`,
-        status: 'draft'
-      };
-      await campaignsAPI.create(duplicateData);
+      await dispatch(duplicateCampaignThunk(selectedCampaign.id)).unwrap();
       toast.success('Campaign duplicated successfully');
-      fetchCampaigns();
     } catch (error) {
       toast.error('Failed to duplicate campaign');
     }
     handleMenuClose();
   };
 
-  const handleSchedule = () => {
-    toast.info('Schedule functionality coming soon');
+  const handleSend = async () => {
+    if (!selectedCampaign) return;
+    try {
+      await dispatch(sendCampaignThunk(selectedCampaign.id)).unwrap();
+      toast.success('Campaign sent');
+    } catch (error) {
+      toast.error('Failed to send campaign');
+    }
+    handleMenuClose();
+  };
+
+  const handlePause = async () => {
+    if (!selectedCampaign) return;
+    try {
+      await dispatch(pauseCampaignThunk(selectedCampaign.id)).unwrap();
+      toast.success('Campaign paused');
+    } catch (error) {
+      toast.error('Failed to pause campaign');
+    }
+    handleMenuClose();
+  };
+
+  
+  const handleDelete = async () => {
+    if (!selectedCampaign) return;
+    if (!window.confirm('Are you sure you want to delete this campaign?')) return;
+    try {
+      await dispatch(deleteCampaignThunk(selectedCampaign.id)).unwrap();
+      toast.success('Campaign deleted');
+    } catch (error) {
+      toast.error('Failed to delete campaign');
+    }
     handleMenuClose();
   };
 
   const handleViewAnalytics = () => {
     toast.info('Analytics functionality coming soon');
+    handleMenuClose();
+  };
+
+  const handleSchedule = () => {
+    toast.info('Schedule functionality coming soon');
     handleMenuClose();
   };
 
@@ -160,10 +204,11 @@ export default function Campaigns() {
   };
 
   const clearFilters = () => {
+    setSearchQuery('');
     setStatusFilter([]);
     setTypeFilter([]);
     setDateRangeFilter(['', '']);
-    fetchCampaigns();
+    dispatch(fetchCampaigns());
   };
 
   const getCampaignStats = () => {
@@ -173,10 +218,8 @@ export default function Campaigns() {
       scheduled: campaigns.filter(c => c.status === 'scheduled').length,
       sending: campaigns.filter(c => c.status === 'sending').length,
       sent: campaigns.filter(c => c.status === 'sent').length,
-      totalRecipients: campaigns.reduce((sum, c) => sum + (c.totalRecipients || 0), 0),
-      totalSent: campaigns.reduce((sum, c) => sum + (c.sentCount || 0), 0),
-      totalOpened: campaigns.reduce((sum, c) => sum + (c.openedCount || 0), 0),
-      totalClicked: campaigns.reduce((sum, c) => sum + (c.clickedCount || 0), 0),
+      paused: campaigns.filter(c => c.status === 'paused').length,
+      cancelled: campaigns.filter(c => c.status === 'cancelled').length,
     };
     return stats;
   };
@@ -189,54 +232,6 @@ export default function Campaigns() {
   const handleMenuClose = () => {
     setAnchorEl(null);
     setSelectedCampaign(null);
-  };
-
-  const handleSend = async (campaign?: any) => {
-    const campaignToSend = campaign || selectedCampaign;
-    if (!campaignToSend) return;
-    
-    if (!window.confirm(`Are you sure you want to send "${campaignToSend.name}" now?`)) {
-      return;
-    }
-    
-    try {
-      await campaignsAPI.send(campaignToSend.id);
-      toast.success('Campaign started successfully');
-      fetchCampaigns();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to send campaign');
-    }
-    if (!campaign) {
-    handleMenuClose();
-    }
-  };
-
-  const handlePause = async () => {
-    if (!selectedCampaign) return;
-    
-    try {
-      await campaignsAPI.pause(selectedCampaign.id);
-      toast.success('Campaign paused');
-      fetchCampaigns();
-    } catch (error) {
-      toast.error('Failed to pause campaign');
-    }
-    handleMenuClose();
-  };
-
-  const handleDelete = async () => {
-    if (!selectedCampaign) return;
-    
-    if (window.confirm('Are you sure you want to delete this campaign?')) {
-      try {
-        await campaignsAPI.delete(selectedCampaign.id);
-        toast.success('Campaign deleted successfully');
-        fetchCampaigns();
-      } catch (error) {
-        toast.error('Failed to delete campaign');
-      }
-    }
-    handleMenuClose();
   };
 
   if (loading) {
@@ -258,7 +253,7 @@ export default function Campaigns() {
             Campaigns
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {stats.total} campaigns • {stats.totalRecipients} total recipients • {stats.totalSent} sent
+            {stats.total} campaigns
           </Typography>
         </Box>
         <Box display="flex" gap={1} alignItems="center">
@@ -368,7 +363,7 @@ export default function Campaigns() {
               </Box>
               <Box>
                 <Typography variant="h6" fontWeight="bold">
-                  {stats.totalRecipients > 0 ? ((stats.totalOpened / stats.totalSent) * 100).toFixed(1) : 0}%
+                  0%
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Open Rate
@@ -395,7 +390,7 @@ export default function Campaigns() {
               </Box>
               <Box>
                 <Typography variant="h6" fontWeight="bold">
-                  {stats.totalRecipients > 0 ? ((stats.totalClicked / stats.totalSent) * 100).toFixed(1) : 0}%
+                  0%
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Click Rate
@@ -510,7 +505,7 @@ export default function Campaigns() {
               </Grid>
             </Grid>
             <Box mt={2} display="flex" gap={1}>
-              <Button size="small" onClick={fetchCampaigns}>
+              <Button size="small" onClick={() => dispatch(fetchCampaigns())}>
                 Apply Filters
               </Button>
               <Button size="small" onClick={clearFilters}>
@@ -522,13 +517,13 @@ export default function Campaigns() {
       </Card>
 
       {/* Campaign Grid */}
-      {campaigns.length === 0 ? (
+      {filteredCampaigns.length === 0 ? (
         <Card sx={{ p: 4, textAlign: 'center' }}>
           <Typography variant="h6" color="text.secondary" gutterBottom>
-            No campaigns yet
+            No campaigns found
           </Typography>
           <Typography variant="body2" color="text.secondary" mb={3}>
-            Create your first email or SMS campaign to start engaging with your contacts
+            Try adjusting your filters or create a new campaign
           </Typography>
           <Button
             variant="contained"
@@ -540,7 +535,7 @@ export default function Campaigns() {
         </Card>
       ) : (
         <Grid container spacing={3}>
-          {campaigns.map((campaign) => (
+          {filteredCampaigns.map((campaign) => (
             <Grid item xs={12} md={6} lg={4} key={campaign.id}>
               <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Box p={2} flex={1}>
@@ -589,7 +584,7 @@ export default function Campaigns() {
                         Recipients
                       </Typography>
                       <Typography variant="caption" fontWeight="medium">
-                        {campaign.totalRecipients || campaign.recipientContactIds?.length || 0}
+                        {campaign.recipientIds?.length || 0}
                       </Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between" mb={1}>
@@ -597,7 +592,7 @@ export default function Campaigns() {
                         Sent
                       </Typography>
                       <Typography variant="caption" fontWeight="medium">
-                        {campaign.sentCount}
+                        0
                       </Typography>
                     </Box>
                     {campaign.type === 'email' && (
@@ -607,11 +602,9 @@ export default function Campaigns() {
                             Opened
                           </Typography>
                           <Typography variant="caption" fontWeight="medium">
-                            {campaign.openedCount} (
-                            {campaign.sentCount > 0
-                              ? ((campaign.openedCount / campaign.sentCount) * 100).toFixed(1)
-                              : 0}
-                            %)
+                            0 (
+                            0%
+                            )
                           </Typography>
                         </Box>
                         <Box display="flex" justifyContent="space-between">
@@ -619,11 +612,9 @@ export default function Campaigns() {
                             Clicked
                           </Typography>
                           <Typography variant="caption" fontWeight="medium">
-                            {campaign.clickedCount} (
-                            {campaign.sentCount > 0
-                              ? ((campaign.clickedCount / campaign.sentCount) * 100).toFixed(1)
-                              : 0}
-                            %)
+                            0 (
+                            0%
+                            )
                           </Typography>
                         </Box>
                       </>
@@ -635,10 +626,10 @@ export default function Campaigns() {
                     <Box mb={2}>
                       <LinearProgress
                         variant="determinate"
-                        value={campaign.totalRecipients > 0 ? (campaign.sentCount / campaign.totalRecipients) * 100 : 0}
+                        value={0}
                       />
                       <Typography variant="caption" color="text.secondary" mt={0.5}>
-                        Sending... {campaign.sentCount} of {campaign.totalRecipients || campaign.recipientContactIds?.length || 0}
+                        Sending... 0 of {campaign.recipientIds?.length || 0}
                       </Typography>
                     </Box>
                   )}
@@ -681,7 +672,7 @@ export default function Campaigns() {
                       size="small"
                       variant="contained"
                       startIcon={<PlayArrow />}
-                      onClick={() => handleSend(campaign)}
+                      onClick={() => handleSend()}
                     >
                       Send
                     </Button>

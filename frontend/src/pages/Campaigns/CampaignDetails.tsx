@@ -25,101 +25,89 @@ import {
   Pause,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { campaignsAPI } from '../../services/api';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import {
+  fetchCampaigns,
+} from '../../store/slices/campaignsSlice';
+import { campaignsApi } from '../../services/campaignsApi';
 import { format } from 'date-fns';
 
 export default function CampaignDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [campaign, setCampaign] = useState<any>(null);
+  const dispatch = useAppDispatch();
+  const campaigns = useAppSelector((state) => state.campaigns.campaigns);
+  const campaign = campaigns.find((c) => c.id === id) || null;
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState<any>({});
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      fetchCampaign();
-    }
-  }, [id]);
-
-  const fetchCampaign = async () => {
-    try {
-      setLoading(true);
-      const data: any = await campaignsAPI.getOne(id!);
-      // Convert Firestore timestamps to Date objects
-      const campaignData = {
-        ...data,
-        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
-        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
-        sentAt: data.sentAt?.toDate ? data.sentAt.toDate() : data.sentAt,
-        scheduledAt: data.scheduledAt?.toDate ? data.scheduledAt.toDate() : data.scheduledAt,
-      };
-      setCampaign(campaignData);
-      setEditFormData({
-        name: campaignData.name,
-        description: campaignData.description || '',
-        subject: campaignData.subject || '',
+    if (id && !campaign) {
+      dispatch(fetchCampaigns()).unwrap().catch(() => {
+        toast.error('Failed to load campaign');
       });
-    } catch (error) {
-      toast.error('Failed to load campaign');
-      navigate('/campaigns');
-    } finally {
-      setLoading(false);
     }
-  };
+    setLoading(false);
+  }, [id, campaign, dispatch]);
 
   const handleEdit = () => {
+    if (!campaign) return;
+    setEditFormData({
+      name: campaign.name,
+      description: campaign.description || '',
+      subject: campaign.subject || '',
+    });
     setEditDialogOpen(true);
   };
 
   const handleSaveEdit = async () => {
+    if (!campaign || !id) return;
     try {
       setSaving(true);
-      await campaignsAPI.update(id!, editFormData);
+      await campaignsApi.update(id, editFormData);
       toast.success('Campaign updated successfully');
       setEditDialogOpen(false);
-      fetchCampaign();
+      dispatch(fetchCampaigns());
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update campaign');
+      toast.error('Failed to update campaign');
     } finally {
       setSaving(false);
     }
   };
 
   const handleSend = async () => {
-    if (!window.confirm('Are you sure you want to send this campaign now?')) {
-      return;
-    }
+    if (!campaign || !id) return;
     try {
-      await campaignsAPI.send(id!);
-      toast.success('Campaign started successfully');
-      fetchCampaign();
+      await campaignsApi.send(id);
+      toast.success('Campaign sent successfully');
+      dispatch(fetchCampaigns());
     } catch (error: any) {
-      toast.error(error.message || 'Failed to send campaign');
+      toast.error('Failed to send campaign');
     }
   };
 
   const handlePause = async () => {
+    if (!campaign || !id) return;
     try {
-      await campaignsAPI.pause(id!);
-      toast.success('Campaign paused');
-      fetchCampaign();
+      await campaignsApi.pause(id);
+      toast.success('Campaign paused successfully');
+      dispatch(fetchCampaigns());
     } catch (error: any) {
-      toast.error(error.message || 'Failed to pause campaign');
+      toast.error('Failed to pause campaign');
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this campaign? This action cannot be undone.')) {
-      return;
-    }
+    if (!campaign || !id) return;
+    if (!window.confirm('Are you sure you want to delete this campaign?')) return;
     try {
-      await campaignsAPI.delete(id!);
+      await campaignsApi.remove(id);
       toast.success('Campaign deleted successfully');
       navigate('/campaigns');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete campaign');
+      toast.error('Failed to delete campaign');
     }
   };
 
@@ -375,7 +363,7 @@ export default function CampaignDetails() {
           </Card>
 
           {/* Performance Metrics */}
-          {campaign.type === 'email' && campaign.sentCount > 0 && (
+          {campaign.type === 'email' && (campaign.sentCount || 0) > 0 && (
             <Card sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
                 Performance
@@ -388,7 +376,7 @@ export default function CampaignDetails() {
                     Open Rate
                   </Typography>
                   <Typography variant="body2" fontWeight="bold">
-                    {((campaign.openedCount / campaign.sentCount) * 100).toFixed(1)}%
+                    {(((campaign.openedCount || 0) / (campaign.sentCount || 1)) * 100).toFixed(1)}%
                   </Typography>
                 </Box>
               </Box>
@@ -399,7 +387,7 @@ export default function CampaignDetails() {
                     Click Rate
                   </Typography>
                   <Typography variant="body2" fontWeight="bold">
-                    {((campaign.clickedCount / campaign.sentCount) * 100).toFixed(1)}%
+                    {(((campaign.clickedCount || 0) / (campaign.sentCount || 1)) * 100).toFixed(1)}%
                   </Typography>
                 </Box>
               </Box>

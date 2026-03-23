@@ -244,18 +244,29 @@ export interface SMS {
 export interface Campaign {
   id: string;
   name: string;
+  description?: string;
   type: 'email' | 'sms' | 'social' | 'direct-mail';
   status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'paused' | 'cancelled';
   subject?: string;
   content: string;
+  htmlContent?: string;
   templateId?: string;
   segmentId?: string;
   recipientIds: string[];
+  recipientContactIds?: string[];
+  totalRecipients?: number;
   scheduledAt?: Date;
   sentAt?: Date;
   createdAt: Date;
   updatedAt: Date;
   createdBy: string;
+  // Campaign metrics
+  sentCount?: number;
+  openedCount?: number;
+  clickedCount?: number;
+  // Sender info for email campaigns
+  senderName?: string;
+  senderEmail?: string;
 }
 
 export interface Segment {
