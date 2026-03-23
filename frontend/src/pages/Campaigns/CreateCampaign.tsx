@@ -33,9 +33,9 @@ import {
 } from '@mui/material';
 import { ArrowBack, Send, AutoAwesome, Description, Refresh } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { useAppDispatch } from '@/store/hooks';
-import { createCampaign } from '@/store/slices/campaignsSlice';
-import { contactsApi } from '@/services/contactsApi';
+import { useAppDispatch } from '../../store/hooks';
+import { createCampaign } from '../../store/slices/campaignsSlice';
+import { contactsApi } from '../../services/contactsApi';
 
 const steps = ['Campaign Type', 'Content', 'Recipients', 'Preview', 'Review & Send'];
 
