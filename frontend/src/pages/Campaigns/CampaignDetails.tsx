@@ -25,19 +25,19 @@ import {
   Pause,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   fetchCampaigns,
-} from '../../store/slices/campaignsSlice';
-import { campaignsApi } from '../../services/campaignsApi';
+} from '@/store/slices/campaignsSlice';
+import { campaignsApi } from '@/services/campaignsApi';
 import { format } from 'date-fns';
 
 export default function CampaignDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const campaigns = useAppSelector((state) => state.campaigns.campaigns);
-  const campaign = campaigns.find((c) => c.id === id) || null;
+  const campaigns = useAppSelector((state: any) => state.campaigns.campaigns);
+  const campaign = campaigns.find((c: any) => c.id === id) || null;
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState<any>({});

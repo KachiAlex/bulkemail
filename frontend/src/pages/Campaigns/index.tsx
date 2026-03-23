@@ -42,14 +42,14 @@ import {
   Download,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   fetchCampaigns,
   deleteCampaign as deleteCampaignThunk,
   sendCampaign as sendCampaignThunk,
   pauseCampaign as pauseCampaignThunk,
   duplicateCampaign as duplicateCampaignThunk,
-} from '../../store/slices/campaignsSlice';
+} from '@/store/slices/campaignsSlice';
 import { format } from 'date-fns';
 
 const campaignTypeIcons = {
@@ -62,14 +62,27 @@ const statusColors: Record<string, any> = {
   scheduled: 'info',
   sending: 'warning',
   sent: 'success',
-  paused: 'warning',
+  paused: 'secondary',
   cancelled: 'error',
+};
+
+const getStatusColor = (status: any): any => {
+  return statusColors[status];
+};
+
+const formatDate = (date: any): string => {
+  return format(new Date(date), 'MMM d, yyyy');
+};
+
+const formatRecipients = (campaign: any): string => {
+  return campaign.recipientIds?.length || 0;
 };
 
 export default function Campaigns() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { campaigns, loading } = useAppSelector((state) => state.campaigns);
+  const campaigns = useAppSelector((state: any) => state.campaigns.campaigns);
+  const loading = useAppSelector((state: any) => state.campaigns.loading);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   
@@ -116,21 +129,21 @@ export default function Campaigns() {
     let filtered = campaigns;
 
     if (searchQuery) {
-      filtered = filtered.filter((campaign) =>
+      filtered = filtered.filter((campaign: any) =>
         campaign.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
     if (statusFilter.length > 0) {
-      filtered = filtered.filter((campaign) => statusFilter.includes(campaign.status));
+      filtered = filtered.filter((campaign: any) => statusFilter.includes(campaign.status));
     }
 
     if (typeFilter.length > 0) {
-      filtered = filtered.filter((campaign) => typeFilter.includes(campaign.type));
+      filtered = filtered.filter((campaign: any) => typeFilter.includes(campaign.type));
     }
 
     if (dateRangeFilter[0] && dateRangeFilter[1]) {
-      filtered = filtered.filter((campaign) => {
+      filtered = filtered.filter((campaign: any) => {
         const campaignDate = new Date(campaign.createdAt);
         return campaignDate >= new Date(dateRangeFilter[0]) && campaignDate <= new Date(dateRangeFilter[1]);
       });
@@ -214,12 +227,12 @@ export default function Campaigns() {
   const getCampaignStats = () => {
     const stats = {
       total: campaigns.length,
-      draft: campaigns.filter(c => c.status === 'draft').length,
-      scheduled: campaigns.filter(c => c.status === 'scheduled').length,
-      sending: campaigns.filter(c => c.status === 'sending').length,
-      sent: campaigns.filter(c => c.status === 'sent').length,
-      paused: campaigns.filter(c => c.status === 'paused').length,
-      cancelled: campaigns.filter(c => c.status === 'cancelled').length,
+      draft: campaigns.filter((c: any) => c.status === 'draft').length,
+      scheduled: campaigns.filter((c: any) => c.status === 'scheduled').length,
+      sending: campaigns.filter((c: any) => c.status === 'sending').length,
+      sent: campaigns.filter((c: any) => c.status === 'sent').length,
+      paused: campaigns.filter((c: any) => c.status === 'paused').length,
+      cancelled: campaigns.filter((c: any) => c.status === 'cancelled').length,
     };
     return stats;
   };
@@ -535,7 +548,7 @@ export default function Campaigns() {
         </Card>
       ) : (
         <Grid container spacing={3}>
-          {filteredCampaigns.map((campaign) => (
+          {filteredCampaigns.map((campaign: any) => (
             <Grid item xs={12} md={6} lg={4} key={campaign.id}>
               <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Box p={2} flex={1}>
@@ -572,7 +585,7 @@ export default function Campaigns() {
                   {/* Status */}
                   <Chip
                     label={campaign.status}
-                    color={statusColors[campaign.status]}
+                    color={getStatusColor(campaign.status)}
                     size="small"
                     sx={{ mb: 2 }}
                   />
@@ -584,7 +597,7 @@ export default function Campaigns() {
                         Recipients
                       </Typography>
                       <Typography variant="caption" fontWeight="medium">
-                        {campaign.recipientIds?.length || 0}
+                        {formatRecipients(campaign)}
                       </Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between" mb={1}>
@@ -629,7 +642,7 @@ export default function Campaigns() {
                         value={0}
                       />
                       <Typography variant="caption" color="text.secondary" mt={0.5}>
-                        Sending... 0 of {campaign.recipientIds?.length || 0}
+                        Sending... 0 of {formatRecipients(campaign)}
                       </Typography>
                     </Box>
                   )}
@@ -642,10 +655,10 @@ export default function Campaigns() {
                       const createdDate = campaign.createdAt ? new Date(campaign.createdAt) : null;
                       
                       if (sentDate && !isNaN(sentDate.getTime())) {
-                        return `Sent ${format(sentDate, 'MMM d, yyyy')}`;
+                        return `Sent ${formatDate(sentDate)}`;
                       }
                       if (scheduledDate && !isNaN(scheduledDate.getTime())) {
-                        return `Scheduled for ${format(scheduledDate, 'MMM d, yyyy')}`;
+                        return `Scheduled for ${formatDate(scheduledDate)}`;
                       }
                       if (createdDate && !isNaN(createdDate.getTime())) {
                         return `Created ${format(createdDate, 'MMM d, yyyy')}`;
