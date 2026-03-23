@@ -22,7 +22,8 @@
     "migration:run": "typeorm-ts-node-commonjs migration:run",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert",
     "seed:admin": "ts-node src/seeds/seed-runner.ts",
-    "seed:prod": "node scripts/seed-production.js"
+    "seed:prod": "node scripts/seed-production.js",
+    "migrate:prod": "node scripts/run-migrations.js"
   },
   "dependencies": {
     "@nestjs/bull": "^10.0.1",
