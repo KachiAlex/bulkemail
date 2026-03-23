@@ -1,3 +1,4 @@
+// Seed controller for creating admin user - deployed at: new Date().toISOString()
 import { Controller, Post, Get } from '@nestjs/common';
 import { AdminSeed } from './seeds/admin.seed';
 
