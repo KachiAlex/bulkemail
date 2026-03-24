@@ -17,6 +17,18 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
 
+    /* Path Mapping */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@store/*": ["./src/store/*"],
+      "@services/*": ["./src/services/*"],
+      "@pages/*": ["./src/pages/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@types/*": ["./src/types/*"],
+      "@components/*": ["./src/components/*"]
+    },
+
     /* Linting */
     "strict": false,
     "noUnusedLocals": false,

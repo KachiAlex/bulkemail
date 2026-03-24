@@ -38,15 +38,18 @@ import {
   ImportExport
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { Contact } from '../../types/crm';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { contactsApi } from '@services/contactsApi';
+import { useAppDispatch, useAppSelector } from '@store/hooks';
 import {
   fetchContacts,
-  createContact as createContactThunk,
+  createContact,
   updateContactThunk,
   deleteContactThunk,
-  bulkDeleteContacts as bulkDeleteContactsThunk,
-} from '../../store/slices/contactsSlice';
+  bulkDeleteContacts,
+  setContacts,
+  setFilter,
+  setPagination,
+} from '@store/slices/contactsSlice';
 
 interface TabPanelProps {
   children?: React.ReactNode;
