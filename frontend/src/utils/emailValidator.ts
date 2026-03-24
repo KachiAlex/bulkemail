@@ -359,8 +359,8 @@ export const validateContactEmail = async (
   let validation = await validateEmail(email);
   
   // Auto-detect API keys from environment variables if not provided
-  const cloudmersiveKey = import.meta.env.VITE_CLOUDMERSIVE_API_KEY;
-  const abstractKey = import.meta.env.VITE_ABSTRACT_API_KEY;
+  const cloudmersiveKey = process.env.VITE_CLOUDMERSIVE_API_KEY;
+  const abstractKey = process.env.VITE_ABSTRACT_API_KEY;
   
   // If API verification is enabled, try to use it
   if (options?.useAPI !== false) {
