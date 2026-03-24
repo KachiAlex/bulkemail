@@ -41,7 +41,7 @@ import {
   Error as ErrorIcon
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { contactsApi } from '../../services/contactsApi';
+import { contactsApi } from '../../services/contactsApi.js';
 
 interface ExtractLeadsDialogProps {
   open: boolean;

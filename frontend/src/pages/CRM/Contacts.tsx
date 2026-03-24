@@ -38,8 +38,8 @@ import {
   ImportExport
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { contactsApi } from '../../services/contactsApi';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { contactsApi } from '../../services/contactsApi.js';
+import { useAppDispatch, useAppSelector } from '../../store/hooks.js';
 import {
   fetchContacts,
   createContact,
@@ -49,7 +49,7 @@ import {
   setContacts,
   setFilter,
   setPagination,
-} from '../../store/slices/contactsSlice';
+} from '../../store/slices/contactsSlice.js';
 
 interface TabPanelProps {
   children?: React.ReactNode;
