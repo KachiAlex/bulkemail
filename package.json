@@ -12,15 +12,27 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "cd backend && npm run start:dev",
     "dev:frontend": "cd frontend && npm run dev",
-    "build": "npm run build:backend && npm run build:frontend",
+    "build": "npm run build:frontend",
     "build:backend": "cd backend && npm run build",
     "build:frontend": "cd frontend && npm run build"
   },
-  "keywords": ["crm", "ai", "telephony", "campaigns", "bulk-messaging"],
+  "keywords": [
+    "crm",
+    "ai",
+    "telephony",
+    "campaigns",
+    "bulk-messaging"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@esbuild/win32-x64": "^0.27.4",
+    "@rollup/rollup-win32-x64-msvc": "^4.60.0",
+    "bcrypt": "^6.0.0",
+    "pg": "^8.20.0",
+    "sqlite3": "^5.1.7"
   }
 }
-
