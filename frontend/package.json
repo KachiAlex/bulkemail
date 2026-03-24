@@ -6,8 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:webpack": "webpack --mode production",
     "build:netlify": "vite build",
     "build:skip-ts": "vite build",
+    "build:fix": "npm install --force && npm run build",
+    "prebuild": "npm install @rollup/rollup-linux-x64-gnu --force || true",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "firebase:deploy": "firebase deploy",
@@ -38,6 +41,7 @@
     "yup": "^1.3.3"
   },
   "devDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.60.0",
     "@types/papaparse": "^5.3.14",
     "@types/react": "^18.2.47",
     "@types/react-dom": "^18.2.18",

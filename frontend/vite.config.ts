@@ -25,6 +25,9 @@ export default defineConfig({
   },
   esbuild: {
     target: 'es2020'
+  },
+  optimizeDeps: {
+    force: true
   }
 });
 
