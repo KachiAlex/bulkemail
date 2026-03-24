@@ -25,11 +25,11 @@ import {
   Pause,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { useAppDispatch, useAppSelector } from '../../store/hooks.js';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   fetchCampaigns,
-} from '../../store/slices/campaignsSlice.js';
-import { campaignsApi } from '../../services/campaignsApi.js';
+} from '../../store/slices/campaignsSlice';
+import { campaignsApi } from '../../services/campaignsApi';
 import { format } from 'date-fns';
 
 export default function CampaignDetails() {

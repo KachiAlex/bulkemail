@@ -13,6 +13,9 @@ import { TelephonyModule } from './telephony/telephony.module';
 import { AiModule } from './ai/ai.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { CommonModule } from './common/common.module';
+import { SeedsModule } from './seeds/seeds.module';
+import { HealthController } from './health.controller';
+import { SeedController } from './seed.controller';
 
 @Module({
   imports: [
@@ -33,7 +36,7 @@ import { CommonModule } from './common/common.module';
         password: configService.get('DATABASE_PASSWORD'),
         database: configService.get('DATABASE_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: configService.get('NODE_ENV') === 'development',
+        synchronize: true, // Enable for initial deployment
         logging: configService.get('NODE_ENV') === 'development',
         ssl: configService.get('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
       }),
@@ -57,6 +60,7 @@ import { CommonModule } from './common/common.module';
 
     // Feature modules
     CommonModule,
+    SeedsModule,
     AuthModule,
     UsersModule,
     ContactsModule,
@@ -65,6 +69,7 @@ import { CommonModule } from './common/common.module';
     AiModule,
     AnalyticsModule,
   ],
+  controllers: [HealthController, SeedController],
 })
 export class AppModule {}
 

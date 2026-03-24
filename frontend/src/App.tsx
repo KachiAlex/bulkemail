@@ -1,10 +1,8 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '../firebase-config';
-import { doc, getDoc } from 'firebase/firestore';
 import { logout, loginSuccess } from './store/slices/authSlice';
+import { authApi } from './services/authApi';
 import Layout from './components/Layout';
 import CRMLayout from './layouts/CRMLayout';
 import Login from './pages/Auth/Login';
@@ -40,49 +38,30 @@ function App() {
   const [authInitialized, setAuthInitialized] = React.useState(false);
 
   useEffect(() => {
-    // Wait for Firebase Auth to initialize before checking auth state
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('Firebase Auth state changed:', user ? 'authenticated' : 'not authenticated');
-      
-      if (user) {
-        // Firebase user is authenticated
-        try {
-          // Get user data from Firestore
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          const userData = userDoc.data();
-          
-          if (userData) {
-            // Get a fresh ID token
-            const token = await user.getIdToken();
-            
-            // Update Redux store with Firestore data
-            dispatch(loginSuccess({
-              user: {
-                id: user.uid,
-                email: user.email || '',
-                firstName: userData.firstName || '',
-                lastName: userData.lastName || '',
-                role: userData.role || 'user'
-              },
-              accessToken: token,
-              refreshToken: user.refreshToken
-            }));
-          }
-        } catch (error) {
-          console.error('Error loading user data:', error);
+    // Check for existing token in localStorage on app load
+    const initializeAuth = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+          // Validate token with backend
+          const response = await authApi.getProfile();
+          dispatch(loginSuccess({
+            user: response.user,
+            accessToken: token,
+            refreshToken: localStorage.getItem('refreshToken') || ''
+          }));
         }
-      } else {
-        // No Firebase user, make sure we're logged out
-        if (isAuthenticated) {
-          console.log('Firebase user is null - logging out');
-          dispatch(logout());
-        }
+      } catch (error) {
+        // Token is invalid, clear localStorage
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        dispatch(logout());
+      } finally {
+        setAuthInitialized(true);
       }
-      
-      setAuthInitialized(true);
-    });
+    };
 
-    return () => unsubscribe();
+    initializeAuth();
   }, [dispatch]);
 
   // Show loading screen while auth is initializing

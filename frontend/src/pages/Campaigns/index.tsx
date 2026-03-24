@@ -42,14 +42,14 @@ import {
   Download,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { useAppDispatch, useAppSelector } from '../../store/hooks.js';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   fetchCampaigns,
   deleteCampaign as deleteCampaignThunk,
   sendCampaign as sendCampaignThunk,
   pauseCampaign as pauseCampaignThunk,
   duplicateCampaign as duplicateCampaignThunk,
-} from '../../store/slices/campaignsSlice.js';
+} from '../../store/slices/campaignsSlice';
 import { format } from 'date-fns';
 
 const campaignTypeIcons = {

@@ -15,9 +15,7 @@ import {
 } from '@mui/material';
 import { toast } from 'react-toastify';
 import { loginSuccess } from '../../store/slices/authSlice';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../../../firebase-config';
+import { authApi } from '../../services/authApi';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -48,44 +46,28 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // Create user with Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-      
-      const user = userCredential.user;
-      
-      // Store additional user data in Firestore
-      await setDoc(doc(db, 'users', user.uid), {
+      const response = await authApi.register({
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        role: 'sales_rep',
-        createdAt: new Date(),
-        updatedAt: new Date()
+        password: formData.password,
       });
 
-      // Update Redux store
-      dispatch(loginSuccess({
-        user: {
-          id: user.uid,
-          email: user.email || '',
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          role: 'sales_rep'
-        },
-        accessToken: await user.getIdToken(),
-        refreshToken: user.refreshToken
-      }));
+      dispatch(
+        loginSuccess({
+          user: response.user,
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
+        }),
+      );
 
       toast.success('Registration successful!');
       navigate('/dashboard');
     } catch (err: any) {
       console.error('Registration error:', err);
-      setError(err.message || 'Registration failed');
-      toast.error('Registration failed');
+      const errorMessage = err.response?.data?.message || err.message || 'Registration failed';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

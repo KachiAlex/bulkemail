@@ -26,7 +26,11 @@ import {
   Chat
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { useDispatch } from 'react-redux';
 import CRMNavigation from '../components/CRMNavigation';
+import { logout as logoutAction } from '../store/slices/authSlice';
+import { authApi } from '../services/authApi';
 
 interface CRMLayoutProps {
   children: React.ReactNode;
@@ -36,6 +40,7 @@ export default function CRMLayout({ children }: CRMLayoutProps) {
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -45,9 +50,17 @@ export default function CRMLayout({ children }: CRMLayoutProps) {
     setAnchorEl(null);
   };
 
-  const handleLogout = () => {
-    // Implement logout logic
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch (error: any) {
+      console.warn('Logout request failed, continuing client-side cleanup', error);
+      const message = error?.response?.data?.message || error.message;
+      toast.error(message ?? 'Unable to reach server, but logging out locally.');
+    } finally {
+      dispatch(logoutAction());
+      navigate('/login');
+    }
   };
 
   const quickActions = [

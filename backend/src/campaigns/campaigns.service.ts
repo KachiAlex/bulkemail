@@ -49,7 +49,7 @@ export class CampaignsService {
     const savedCampaign = await this.campaignsRepository.save(campaign);
 
     // Create message records for each recipient
-    const messages = recipients.map(contact => ({
+    const messages = recipients.map((contact: Contact) => ({
       campaignId: savedCampaign.id,
       contactId: contact.id,
       recipientEmail: contact.email,

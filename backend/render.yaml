@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: pandi-crm-backend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: API_PREFIX
+        value: /api
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION
+        value: 7d
+      - key: REFRESH_TOKEN_EXPIRATION
+        value: 30d
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://bulkemail-crm.web.app
+      - key: ENABLE_AI_FEATURES
+        value: false
+      - key: ENABLE_CALL_RECORDING
+        value: false
+      - key: ENABLE_SMS
+        value: false
+      - value: false
+        key: ENABLE_EMAIL
+
+databases:
+  - name: pandi-crm-db
+    plan: free

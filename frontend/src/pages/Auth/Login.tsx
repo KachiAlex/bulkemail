@@ -14,9 +14,7 @@ import {
 } from '@mui/material';
 import { toast } from 'react-toastify';
 import { loginSuccess } from '../../store/slices/authSlice';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../../../firebase-config';
+import { authApi } from '../../services/authApi';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -32,54 +30,21 @@ export default function Login() {
     setLoading(true);
 
     try {
-      console.log('Attempting login with email:', email);
-      console.log('Firebase Auth state before login:', auth.currentUser);
-      
-      // Sign in with Firebase Auth
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      console.log('Login successful, user:', user.uid);
-      
-      // Get user data from Firestore
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      const userData = userDoc.data();
-      console.log('User data from Firestore:', userData);
-      
-      // Update Redux store
-      dispatch(loginSuccess({
-        user: {
-          id: user.uid,
-          email: user.email || '',
-          firstName: userData?.firstName || '',
-          lastName: userData?.lastName || '',
-          role: userData?.role || 'sales_rep'
-        },
-        accessToken: await user.getIdToken(),
-        refreshToken: user.refreshToken
-      }));
+      const response = await authApi.login({ email, password });
+
+      dispatch(
+        loginSuccess({
+          user: response.user,
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
+        }),
+      );
 
       toast.success('Login successful!');
       navigate('/dashboard');
     } catch (err: any) {
       console.error('Login error:', err);
-      console.error('Error code:', err.code);
-      console.error('Error message:', err.message);
-      
-      let errorMessage = 'Login failed';
-      if (err.code === 'auth/network-request-failed') {
-        errorMessage = 'Network error. Please check your internet connection and try again.';
-      } else if (err.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email address.';
-      } else if (err.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password.';
-      } else if (err.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email address.';
-      } else if (err.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many failed attempts. Please try again later.';
-      } else {
-        errorMessage = err.message || 'Login failed';
-      }
-      
+      const errorMessage = err.response?.data?.message || err.message || 'Login failed';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
