@@ -33,7 +33,8 @@ import { SeedController } from './seed.controller';
         const config: any = {
           type: 'postgres',
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: true, // Enable for initial deployment
+          subscribers: [__dirname + '/**/*.subscriber{.ts,.js}'],
+          synchronize: true,
           logging: configService.get('NODE_ENV') === 'development',
           ssl: configService.get('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
         };
