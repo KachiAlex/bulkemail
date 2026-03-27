@@ -30,7 +30,7 @@ import {
   fetchCampaigns,
 } from '../../store/slices/campaignsSlice';
 import { campaignsApi } from '../../services/campaignsApi';
-import { format } from 'date-fns';
+import { format } from 'date-fns/format';
 
 export default function CampaignDetails() {
   const { id } = useParams<{ id: string }>();

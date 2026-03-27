@@ -59,7 +59,7 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { crmAPI } from '../../services/crm-api';
-import { format } from 'date-fns';
+import { format } from 'date-fns/format';
 
 const smsStatusColors: Record<string, 'default' | 'primary' | 'success' | 'warning' | 'error'> = {
   unread: 'error',

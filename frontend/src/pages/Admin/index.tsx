@@ -69,7 +69,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { isAdmin } from '../../utils/rbac';
 import { toast } from 'react-toastify';
-import { format } from 'date-fns';
+import { format } from 'date-fns/format';
 import { safeConvertToDate } from '../../utils/dateHelpers';
 
 interface UserRow {

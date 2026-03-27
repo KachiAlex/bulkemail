@@ -23,6 +23,6 @@
     "VITE_API_BASE_URL": "https://pandicrm.onrender.com",
     "VITE_API_TIMEOUT_MS": "10000"
   },
-  "installCommand": "cd frontend && npm install --force",
+  "installCommand": "cd frontend && npm install",
   "buildCommand": "cd frontend && npm run build"
 }

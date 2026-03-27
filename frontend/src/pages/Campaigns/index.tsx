@@ -50,7 +50,7 @@ import {
   pauseCampaign as pauseCampaignThunk,
   duplicateCampaign as duplicateCampaignThunk,
 } from '../../store/slices/campaignsSlice';
-import { format } from 'date-fns';
+import { format } from 'date-fns/format';
 
 const campaignTypeIcons = {
   email: <Email />,
