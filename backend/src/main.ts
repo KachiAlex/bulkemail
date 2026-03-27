@@ -14,9 +14,16 @@ async function bootstrap() {
   app.use(helmet());
   app.use(compression());
 
-  // CORS
+  // CORS — supports comma-separated list of allowed origins
+  const rawCorsOrigin = configService.get<string>('CORS_ORIGIN') || 'http://localhost:5173';
+  const allowedOrigins = rawCorsOrigin.split(',').map((o) => o.trim()).filter(Boolean);
   app.enableCors({
-    origin: configService.get('CORS_ORIGIN') || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // Allow server-to-server requests (no origin header)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     credentials: true,
   });
 
