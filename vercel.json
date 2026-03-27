@@ -9,14 +9,17 @@
       }
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://pandicrm.onrender.com/api/$1"
+      "src": "/api/(.*)",
+      "dest": "https://pandicrm.onrender.com/api/$1"
     },
     {
-      "source": "/(.*)",
-      "destination": "/frontend/index.html"
+      "handle": "filesystem"
+    },
+    {
+      "src": "/.*",
+      "dest": "/index.html"
     }
   ],
   "env": {
