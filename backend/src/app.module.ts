@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
+import { User } from './users/entities/user.entity';
 
 // Modules
 import { AuthModule } from './auth/auth.module';
@@ -23,7 +24,6 @@ import { SeedController } from './seed.controller';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-    import { User } from './users/entities/user.entity';
     }),
 
     // Database
@@ -33,7 +33,7 @@ import { SeedController } from './seed.controller';
         const databaseUrl = configService.get('DATABASE_URL');
         const config: any = {
           type: 'postgres',
-          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          entities: [User, __dirname + '/**/*.entity{.ts,.js}'],
           subscribers: [__dirname + '/**/*.subscriber{.ts,.js}'],
           synchronize: true,
           logging: configService.get('NODE_ENV') === 'development',
@@ -57,7 +57,6 @@ import { SeedController } from './seed.controller';
 
     // Redis & Bull
     BullModule.forRootAsync({
-                User,
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         redis: {
