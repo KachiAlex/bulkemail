@@ -26,10 +26,6 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@rollup/rollup-win32-x64-msvc": "^4.60.0",
     "concurrently": "^8.2.2"
-  },
-  "optionalDependencies": {
-    "@rollup/rollup-win32-x64-msvc": "^4.60.0"
   }
 }
