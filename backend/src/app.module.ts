@@ -23,6 +23,7 @@ import { SeedController } from './seed.controller';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+    import { User } from './users/entities/user.entity';
     }),
 
     // Database
@@ -56,6 +57,7 @@ import { SeedController } from './seed.controller';
 
     // Redis & Bull
     BullModule.forRootAsync({
+                User,
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         redis: {
