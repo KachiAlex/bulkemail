@@ -28,18 +28,28 @@ import { SeedController } from './seed.controller';
     // Database
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('DATABASE_HOST'),
-        port: configService.get('DATABASE_PORT'),
-        username: configService.get('DATABASE_USERNAME'),
-        password: configService.get('DATABASE_PASSWORD'),
-        database: configService.get('DATABASE_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // Enable for initial deployment
-        logging: configService.get('NODE_ENV') === 'development',
-        ssl: configService.get('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
-      }),
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.get('DATABASE_URL');
+        const config: any = {
+          type: 'postgres',
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: true, // Enable for initial deployment
+          logging: configService.get('NODE_ENV') === 'development',
+          ssl: configService.get('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
+        };
+
+        if (databaseUrl) {
+          config.url = databaseUrl;
+        } else {
+          config.host = configService.get('DATABASE_HOST') || 'localhost';
+          config.port = configService.get('DATABASE_PORT') || 5432;
+          config.username = configService.get('DATABASE_USERNAME') || 'postgres';
+          config.password = configService.get('DATABASE_PASSWORD') || 'postgres';
+          config.database = configService.get('DATABASE_NAME') || 'aicrm';
+        }
+
+        return config;
+      },
       inject: [ConfigService],
     }),
 

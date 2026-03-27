@@ -29,8 +29,8 @@ services:
         value: false
       - key: ENABLE_SMS
         value: false
-      - value: false
-        key: ENABLE_EMAIL
+      - key: ENABLE_EMAIL
+        value: false
 
 databases:
   - name: pandi-crm-db
