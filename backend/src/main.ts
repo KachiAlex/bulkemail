@@ -21,7 +21,8 @@ async function bootstrap() {
     origin: (origin, callback) => {
       // Allow server-to-server requests (no origin header)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      const isVercelPreview = /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
+      if (allowedOrigins.includes(origin) || isVercelPreview) return callback(null, true);
       callback(new Error(`Origin ${origin} not allowed by CORS`));
     },
     credentials: true,
