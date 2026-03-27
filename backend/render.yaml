@@ -22,7 +22,7 @@ services:
       - key: ENCRYPTION_KEY
         generateValue: true
       - key: CORS_ORIGIN
-        value: https://bulkemail-crm.web.app
+        value: http://localhost:5173,https://bulkemail-git-master-kachianietie.vercel.app,https://bulkemail.vercel.app
       - key: ENABLE_AI_FEATURES
         value: false
       - key: ENABLE_CALL_RECORDING
