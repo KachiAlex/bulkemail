@@ -12,7 +12,7 @@ services:
       - key: PORT
         value: 3000
       - key: API_PREFIX
-        value: /api
+        value: api
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRATION
