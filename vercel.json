@@ -15,6 +15,10 @@
       "dest": "https://pandicrm.onrender.com/api/$1"
     },
     {
+      "src": "/assets/(.*)",
+      "dest": "/frontend/assets/$1"
+    },
+    {
       "handle": "filesystem"
     },
     {
