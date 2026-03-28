@@ -33,7 +33,13 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const user = await this.validateUser(loginDto.email, loginDto.password);
+    let user;
+    try {
+      user = await this.validateUser(loginDto.email, loginDto.password);
+    } catch (error) {
+      console.error('Error during user validation:', error);
+      throw new UnauthorizedException('Login service temporarily unavailable');
+    }
     
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -73,7 +79,7 @@ export class AuthService {
   }
 
   async logout(userId: string) {
-    await this.usersService.updateRefreshToken(userId, null);
+    await this.usersService.updateRefreshToken(userId, undefined);
     return { message: 'Logged out successfully' };
   }
 
