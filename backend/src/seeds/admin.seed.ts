@@ -12,16 +12,23 @@ export class AdminSeed {
   ) {}
 
   async createAdminUser() {
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+
     const existingAdmin = await this.usersRepository.findOne({
       where: { email: 'admin@pandicrm.com' },
     });
 
     if (existingAdmin) {
-      console.log('✅ Admin user already exists');
-      return existingAdmin;
+      // Always reset to ensure the password is correct
+      await this.usersRepository.update(existingAdmin.id, {
+        password: hashedPassword,
+        role: UserRole.ADMIN,
+        status: UserStatus.ACTIVE,
+        emailVerified: true,
+      });
+      console.log('✅ Admin user password reset successfully');
+      return { ...existingAdmin, password: hashedPassword };
     }
-
-    const hashedPassword = await bcrypt.hash('admin123', 10);
     
     const adminUser = this.usersRepository.create({
       email: 'admin@pandicrm.com',
