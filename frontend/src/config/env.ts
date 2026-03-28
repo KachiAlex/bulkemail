@@ -7,6 +7,6 @@ const isLocalDevelopmentHost =
 
 export const API_BASE_URL = isLocalDevelopmentHost
   ? configuredApiBaseUrl ?? 'http://localhost:3000/api'
-  : '/api';
+  : configuredApiBaseUrl ?? '/api';
 
 export const API_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS ?? 30000);
