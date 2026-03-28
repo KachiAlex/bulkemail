@@ -1,19 +1,116 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
 
-    // This rule allows anyone with your Firestore database reference to view, edit,
-    // and delete all data in your Firestore database. It is useful for getting
-    // started, but it is configured to expire after 30 days because it
-    // leaves your app open to attackers. At that time, all client
-    // requests to your Firestore database will be denied.
-    //
-    // Make sure to write security rules for your app before that time, or else
-    // all client requests to your Firestore database will be denied until you Update
-    // your rules
-    match /{document=**} {
-      allow read, write: if request.time < timestamp.date(2025, 11, 21);
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /users/{userId} {
+      allow read, write: if (isSignedIn() && request.auth.uid == userId) || isAdmin();
+    }
+
+    match /contacts/{contactId} {
+      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.createdById == request.auth.uid) || isAdmin();
+    }
+
+    match /accounts/{accountId} {
+      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.createdById == request.auth.uid) || isAdmin();
+    }
+
+    match /opportunities/{opportunityId} {
+      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.createdById == request.auth.uid) || isAdmin();
+    }
+
+    match /activities/{activityId} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+
+    match /tasks/{taskId} {
+      allow create: if isAdmin() || (
+        isSignedIn() && (
+          request.resource.data.assignedTo == request.auth.uid ||
+          request.resource.data.createdById == request.auth.uid ||
+          request.resource.data.createdBy == request.auth.uid
+        )
+      );
+      allow read, update, delete: if isAdmin() || (
+        isSignedIn() && (
+          resource.data.assignedTo == request.auth.uid ||
+          resource.data.createdById == request.auth.uid ||
+          resource.data.createdBy == request.auth.uid
+        )
+      );
+    }
+
+    match /pipelines/{pipelineId} {
+      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.createdById == request.auth.uid) || isAdmin();
+    }
+
+    match /emailThreads/{threadId} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+
+    match /calls/{callId} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+
+    match /sms/{smsId} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+
+    match /campaigns/{campaignId} {
+      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.createdById == request.auth.uid) || isAdmin();
+    }
+
+    match /segments/{segmentId} {
+      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.createdById == request.auth.uid) || isAdmin();
+    }
+
+    match /emailTemplates/{templateId} {
+      allow create: if isSignedIn() && (
+        request.resource.data.createdBy == request.auth.uid ||
+        request.resource.data.createdById == request.auth.uid
+      );
+      allow read, update, delete: if (isSignedIn() && (
+        resource.data.createdBy == request.auth.uid ||
+        resource.data.createdById == request.auth.uid
+      )) || isAdmin();
+    }
+
+    match /dashboards/{dashboardId} {
+      allow create: if isSignedIn() && request.resource.data.createdById == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.createdById == request.auth.uid) || isAdmin();
+    }
+
+    match /leadScores/{scoreId} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+
+    match /aiRecommendations/{recommendationId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /analytics/{analyticsId} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
     }
   }
 }

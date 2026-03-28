@@ -42,12 +42,18 @@ service cloud.firestore {
     
     // Tasks - users can only access tasks assigned to them or created by them
     match /tasks/{taskId} {
-      allow read, write: if isAdmin() || (
+      allow create: if isAdmin() || (
+        isSignedIn() && (
+          request.resource.data.assignedTo == request.auth.uid ||
+          request.resource.data.createdById == request.auth.uid ||
+          request.resource.data.createdBy == request.auth.uid
+        )
+      );
+      allow read, update, delete: if isAdmin() || (
         isSignedIn() && (
           resource.data.assignedTo == request.auth.uid ||
           resource.data.createdById == request.auth.uid ||
-          request.resource.data.assignedTo == request.auth.uid ||
-          request.resource.data.createdById == request.auth.uid
+          resource.data.createdBy == request.auth.uid
         )
       );
     }
@@ -60,17 +66,20 @@ service cloud.firestore {
     
     // Email Threads - users can only access their own email threads
     match /emailThreads/{threadId} {
-      allow read, write: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
     }
     
     // Calls - users can only access their own calls
     match /calls/{callId} {
-      allow read, write: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
     }
     
     // SMS - users can only access their own SMS
     match /sms/{smsId} {
-      allow read, write: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
     }
     
     // Campaigns - users can only access their own campaigns
@@ -87,8 +96,14 @@ service cloud.firestore {
     
     // Email Templates - users can only access their own templates
     match /emailTemplates/{templateId} {
-      allow create: if isSignedIn() && request.resource.data.createdBy == request.auth.uid;
-      allow read, update, delete: if (isSignedIn() && resource.data.createdBy == request.auth.uid) || isAdmin();
+      allow create: if isSignedIn() && (
+        request.resource.data.createdBy == request.auth.uid ||
+        request.resource.data.createdById == request.auth.uid
+      );
+      allow read, update, delete: if (isSignedIn() && (
+        resource.data.createdBy == request.auth.uid ||
+        resource.data.createdById == request.auth.uid
+      )) || isAdmin();
     }
     
     // Dashboards - users can only access their own dashboards
@@ -99,7 +114,8 @@ service cloud.firestore {
     
     // Lead Scores - users can only access their own lead scores
     match /leadScores/{scoreId} {
-      allow read, write: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
     }
     
     // AI Recommendations - allow read for all authenticated users
@@ -110,7 +126,8 @@ service cloud.firestore {
     
     // Analytics - users can only access their own analytics
     match /analytics/{analyticsId} {
-      allow read, write: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
     }
   }
 }

@@ -93,13 +93,13 @@ class CRMAPI {
         useAPI: true  // Automatically uses API if keys are configured
       });
       
-      // Store validation result in contact
+      // Store validation result in contact (Firestore rejects undefined field values)
       const contactWithValidation = {
         ...contact,
         emailValidated: validation.validation.isValid,
         emailValidationScore: validation.validation.score,
         emailValidationReason: validation.validation.reason,
-        emailValidationProvider: validation.validation.provider
+        emailValidationProvider: validation.validation.provider ?? null
       };
       
       const docRef = await addDoc(collection(db, 'contacts'), {
@@ -137,7 +137,7 @@ class CRMAPI {
         emailValidated: validation.validation.isValid,
         emailValidationScore: validation.validation.score,
         emailValidationReason: validation.validation.reason,
-        emailValidationProvider: validation.validation.provider,
+        emailValidationProvider: validation.validation.provider ?? null,
         updatedAt: serverTimestamp()
       };
       
