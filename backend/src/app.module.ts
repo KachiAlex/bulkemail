@@ -33,6 +33,7 @@ import { SeedController } from './seed.controller';
         const databaseUrl = configService.get('DATABASE_URL');
         const config: any = {
           type: 'postgres',
+          autoLoadEntities: true,
           entities: [User, __dirname + '/**/*.entity{.ts,.js}'],
           subscribers: [__dirname + '/**/*.subscriber{.ts,.js}'],
           synchronize: true,
