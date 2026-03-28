@@ -1,5 +1,5 @@
 // Firebase-based API service
-import { auth, db, functions } from '../../firebase-config';
+import { auth, db } from '../../firebase-config';
 import { 
   collection, 
   doc, 
@@ -13,7 +13,7 @@ import {
   orderBy,
   writeBatch
 } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
+
 
 class FirebaseAPI {
   getCurrentUser() {
@@ -24,6 +24,12 @@ class FirebaseAPI {
     }
     console.log('Using authenticated Firebase user:', user.uid);
     return user;
+  }
+
+  // Helper to get Firebase ID token for current user
+  async getIdToken() {
+    const user = this.getCurrentUser();
+    return await user.getIdToken();
   }
 
 
@@ -180,120 +186,27 @@ class FirebaseAPI {
     });
   }
 
+  // Generic backend fetch with Firebase ID token
+  async backendFetch(url: string, options: any = {}) {
+    const idToken = await this.getIdToken();
+    options.headers = {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${idToken}`,
+    };
+    const response = await fetch(url, options);
+    if (!response.ok) throw new Error(`Backend request failed: ${response.status}`);
+    return await response.json();
+  }
+
   async sendCampaign(id: string) {
-    const campaignDoc = await getDoc(doc(db, 'campaigns', id));
-    if (!campaignDoc.exists()) {
-      throw new Error('Campaign not found');
-    }
-
-    const campaign = { id: campaignDoc.id, ...campaignDoc.data() } as any;
-    
-    if (campaign.status !== 'draft' && campaign.status !== 'paused') {
-      throw new Error('Campaign can only be sent from draft or paused status');
-    }
-
-    // Update status to sending
-    await updateDoc(doc(db, 'campaigns', id), {
-      status: 'sending',
-      updatedAt: new Date()
+    // Use Render backend for sending campaign email
+    const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://pandicrm.onrender.com/api';
+    return await this.backendFetch(`${API_BASE_URL}/campaigns/${id}/send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
-
-    // Get recipient contacts
-    let contacts: any[] = [];
-    if (campaign.segmentId) {
-      contacts = await segmentsAPI.getContacts(campaign.segmentId);
-    } else if (campaign.recipientContactIds && Array.isArray(campaign.recipientContactIds)) {
-      const contactPromises = campaign.recipientContactIds.map((contactId: string) =>
-        getDoc(doc(db, 'contacts', contactId)).then(docSnap => 
-          docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null
-        ).catch(() => null)
-      );
-      contacts = (await Promise.all(contactPromises)).filter(c => c !== null) as any[];
-    }
-
-    // Process emails in batches (send 20 at a time with smaller delays for better performance)
-    const batchSize = 20;
-    const delayBetweenBatches = 500; // 500ms between batches for rate limiting
-    let sentCount = 0;
-    let failedCount = 0;
-
-    // Process in batches to avoid overwhelming the system
-    for (let i = 0; i < contacts.length; i += batchSize) {
-      const batch = contacts.slice(i, i + batchSize);
-      
-      const batchPromises = batch.map(async (contact: any) => {
-        if (campaign.type === 'email' && contact.email) {
-          try {
-            // Personalize content
-            let personalizedSubject = campaign.subject || '';
-            let personalizedContent = campaign.content || campaign.htmlContent || '';
-            
-            // Replace merge tags
-            Object.keys(contact).forEach(key => {
-              const value = contact[key] || '';
-              personalizedSubject = personalizedSubject.replace(new RegExp(`\\[${key}\\]`, 'gi'), value);
-              personalizedContent = personalizedContent.replace(new RegExp(`\\[${key}\\]`, 'gi'), value);
-            });
-
-            // Try to send email via Cloud Function first
-            try {
-              const sendEmail = httpsCallable(functions, 'sendCampaignEmail');
-              await sendEmail({
-                to: contact.email,
-                subject: personalizedSubject,
-                html: personalizedContent,
-                from: campaign.senderEmail || undefined,
-                fromName: campaign.senderName || undefined,
-              });
-              sentCount++;
-              return { success: true, contactId: contact.id };
-            } catch (cloudFunctionError: any) {
-              // If Cloud Function doesn't exist or fails, log the email that would be sent
-              // This allows the campaign to progress even without the Cloud Function
-              console.warn(`Cloud Function not available or failed for ${contact.email}:`, cloudFunctionError.message);
-              console.log(`Email prepared for ${contact.email}:`, {
-                subject: personalizedSubject,
-                hasContent: !!personalizedContent
-              });
-              
-              // For now, still count as sent since we've prepared it
-              // In production, you should set up the Cloud Function
-              sentCount++;
-              return { success: true, contactId: contact.id, warning: 'Email queued (Cloud Function may not be deployed)' };
-            }
-          } catch (error) {
-            console.error(`Failed to send to ${contact.email}:`, error);
-            failedCount++;
-            return { success: false, contactId: contact.id, error };
-          }
-        }
-        return { success: false, contactId: contact.id, error: 'No email address' };
-      });
-
-      await Promise.all(batchPromises);
-      
-      // Update progress
-      await updateDoc(doc(db, 'campaigns', id), {
-        sentCount,
-        updatedAt: new Date()
-      });
-
-      // Wait before next batch (except for the last batch)
-      if (i + batchSize < contacts.length) {
-        await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
-      }
-    }
-
-    // Update final status
-    const finalStatus = failedCount === contacts.length ? 'failed' : 'sent';
-    await updateDoc(doc(db, 'campaigns', id), {
-      status: finalStatus,
-      sentCount,
-      sentAt: new Date(),
-      updatedAt: new Date()
-    });
-
-    return { success: true, sentCount, failedCount };
   }
 
   async deleteCampaign(id: string) {
