@@ -84,7 +84,7 @@ Please provide:
 Format the response as JSON with "subject" and "body" fields.`;
 
     const response = await this.openai.chat.completions.create({
-      model: this.configService.get('OPENAI_MODEL') || 'gpt-4-turbo-preview',
+      model: this.configService.get('OPENAI_MODEL') || 'gpt-3.5-turbo',
       messages: [
         {
           role: 'system',
