@@ -14,9 +14,23 @@ async function bootstrap() {
   app.use(helmet());
   app.use(compression());
 
-  // CORS
+  // CORS — supports comma-separated list of allowed origins
+  const rawCorsOrigin = configService.get<string>('CORS_ORIGIN') || 'http://localhost:5173';
+  const allowedOrigins = rawCorsOrigin.split(',').map((o) => o.trim()).filter(Boolean);
+  console.log('CORS debug: allowedOrigins =', allowedOrigins);
   app.enableCors({
-    origin: configService.get('CORS_ORIGIN') || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      console.log('CORS debug: incoming origin =', origin);
+      // Allow server-to-server requests (no origin header)
+      if (!origin) return callback(null, true);
+      const isVercelPreview = /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
+      if (allowedOrigins.includes(origin) || isVercelPreview) {
+        console.log('CORS debug: origin allowed:', origin);
+        return callback(null, true);
+      }
+      console.log('CORS debug: origin NOT allowed:', origin);
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     credentials: true,
   });
 
