@@ -12,7 +12,7 @@ services:
       - key: PORT
         value: 3000
       - key: API_PREFIX
-        value: /api
+        value: api
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRATION
@@ -22,15 +22,15 @@ services:
       - key: ENCRYPTION_KEY
         generateValue: true
       - key: CORS_ORIGIN
-        value: https://bulkemail-crm.web.app
+        value: http://localhost:5173,https://bulkemail-git-master-kachianietie.vercel.app,https://bulkemail.vercel.app,https://bulkemail-crm.web.app,https://bulkemail-crm.firebaseapp.com
       - key: ENABLE_AI_FEATURES
         value: false
       - key: ENABLE_CALL_RECORDING
         value: false
       - key: ENABLE_SMS
         value: false
-      - value: false
-        key: ENABLE_EMAIL
+      - key: ENABLE_EMAIL
+        value: false
 
 databases:
   - name: pandi-crm-db

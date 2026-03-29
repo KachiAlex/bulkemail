@@ -72,9 +72,9 @@ export class User {
   @Column({ default: false })
   emailVerified: boolean;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true, default: null })
   @Exclude()
-  refreshToken: string | null;
+  refreshToken?: string;
 
   @Column({ type: 'timestamp', nullable: true })
   lastLoginAt: Date;

@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
+import { User } from './users/entities/user.entity';
 
 // Modules
 import { AuthModule } from './auth/auth.module';
@@ -28,18 +29,30 @@ import { SeedController } from './seed.controller';
     // Database
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('DATABASE_HOST'),
-        port: configService.get('DATABASE_PORT'),
-        username: configService.get('DATABASE_USERNAME'),
-        password: configService.get('DATABASE_PASSWORD'),
-        database: configService.get('DATABASE_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // Enable for initial deployment
-        logging: configService.get('NODE_ENV') === 'development',
-        ssl: configService.get('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
-      }),
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.get('DATABASE_URL');
+        const config: any = {
+          type: 'postgres',
+          autoLoadEntities: true,
+          entities: [User, __dirname + '/**/*.entity{.ts,.js}'],
+          subscribers: [__dirname + '/**/*.subscriber{.ts,.js}'],
+          synchronize: true,
+          logging: configService.get('NODE_ENV') === 'development',
+          ssl: configService.get('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
+        };
+
+        if (databaseUrl) {
+          config.url = databaseUrl;
+        } else {
+          config.host = configService.get('DATABASE_HOST') || 'localhost';
+          config.port = configService.get('DATABASE_PORT') || 5432;
+          config.username = configService.get('DATABASE_USERNAME') || 'postgres';
+          config.password = configService.get('DATABASE_PASSWORD') || 'postgres';
+          config.database = configService.get('DATABASE_NAME') || 'aicrm';
+        }
+
+        return config;
+      },
       inject: [ConfigService],
     }),
 
