@@ -1,0 +1,51 @@
+==============================================
+CLOUDMERSIVE API KEY CONFIGURED
+==============================================
+
+Your Cloudmersive API key has been added to: frontend/api-keys.env
+
+MANUAL STEP REQUIRED FOR FIREBASE:
+
+Since .env files don't get deployed to Firebase, you need to add the environment variable
+to Firebase Hosting using one of these methods:
+
+OPTION 1: Firebase CLI (Recommended)
+-------------------------------------
+1. Install Firebase CLI if not already: npm install -g firebase-tools
+2. Run this command from the frontend folder:
+   
+   firebase functions:config:set cloudmersive.api_key="b461deef-656b-4477-8d76-a162e6986b9d"
+
+OPTION 2: Build-time Environment Variables
+------------------------------------------
+Since this is a frontend-only implementation, you need to rebuild with the env variable:
+
+1. Create a .env file in frontend folder with:
+   VITE_CLOUDMERSIVE_API_KEY=b461deef-656b-4477-8d76-a162e6986b9d
+
+2. Build the app:
+   cd frontend
+   npm run build
+
+3. Deploy:
+   firebase deploy --only hosting
+
+OPTION 3: Use Vite Build-time Replacement
+------------------------------------------
+Update your vite.config.ts to include the API key during build.
+
+NEXT STEPS:
+-----------
+I recommend Option 2 for now since it's the simplest and will work immediately.
+
+The API key will be baked into the compiled JavaScript when you build,
+making it accessible to the running application.
+
+Your Cloudmersive account:
+- Free tier: 800 API calls/month
+- Monitor usage: https://portal.cloudmersive.com
+
+API Key: b461deef-656b-4477-8d76-a162e6986b9d
+
+==============================================
+

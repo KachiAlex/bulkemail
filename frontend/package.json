@@ -1,0 +1,60 @@
+{
+  "name": "pandi-crm-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "prebuild": "node -e \"const { execSync } = require('child_process'); const map = { linux: '@rollup/rollup-linux-x64-gnu', win32: '@rollup/rollup-win32-x64-msvc' }; const pkg = map[process.platform]; if (!pkg) process.exit(0); try { execSync('npm install --prefix .. ' + pkg + '@4.60.0 --no-save --force --ignore-scripts', { stdio: 'inherit' }); } catch { console.warn('rollup native package install skipped'); }\"",
+    "build": "vite build",
+    "build:webpack": "webpack --mode production",
+    "build:netlify": "vite build",
+    "build:skip-ts": "vite build",
+    "build:fix": "npm install --force && npm run build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "firebase:deploy": "firebase deploy",
+    "firebase:serve": "firebase serve"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.3",
+    "@emotion/styled": "^11.11.0",
+    "@hookform/resolvers": "^3.3.4",
+    "@mui/icons-material": "^5.15.0",
+    "@mui/material": "^5.15.0",
+    "@mui/x-data-grid": "^6.18.7",
+    "@reduxjs/toolkit": "^2.0.1",
+    "@tinymce/tinymce-react": "^6.3.0",
+    "axios": "^1.6.5",
+    "date-fns": "3.6.0",
+    "esbuild": "^0.27.4",
+    "firebase": "^12.4.0",
+    "papaparse": "^5.4.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-dropzone": "^14.2.3",
+    "react-hook-form": "^7.49.3",
+    "react-redux": "^9.0.4",
+    "react-router-dom": "^6.21.1",
+    "react-toastify": "^10.0.3",
+    "recharts": "^2.10.3",
+    "yup": "^1.3.3"
+  },
+  "devDependencies": {
+    "@types/papaparse": "^5.3.14",
+    "@types/react": "^18.2.47",
+    "@types/react-dom": "^18.2.18",
+    "@typescript-eslint/eslint-plugin": "^6.18.1",
+    "@typescript-eslint/parser": "^6.18.1",
+    "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^8.56.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.60.0",
+    "@rollup/rollup-win32-x64-msvc": "^4.60.0"
+  }
+}
