@@ -1,11 +1,21 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { EmailService } from '../campaigns/services/email.service';
+import { IsEmail, IsOptional, IsString } from 'class-validator';
 
 class SendEmailDto {
+  @IsEmail()
   to: string;
+
+  @IsString()
   subject: string;
+
+  @IsOptional()
+  @IsString()
   html?: string;
+
+  @IsOptional()
+  @IsString()
   text?: string;
 }
 
