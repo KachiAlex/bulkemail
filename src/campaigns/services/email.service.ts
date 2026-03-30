@@ -94,12 +94,25 @@ export class EmailService {
   }
 
   private async sendViaSendGrid(options: EmailOptions, fromEmail: string, fromName: string): Promise<void> {
+    // Ensure SendGrid receives a non-empty content value (SendGrid requires at least one character)
+    const stripTags = (s: string) => s.replace(/<[^>]*>/g, '');
+    const htmlProvided = !!options.html && options.html.trim().length > 0;
+    const textProvided = !!options.text && options.text.trim().length > 0;
+
+    let finalText = '';
+    if (textProvided) finalText = options.text as string;
+    else if (htmlProvided) finalText = stripTags(options.html as string).trim();
+    // fallback to subject if still empty
+    if (!finalText || finalText.length === 0) finalText = options.subject || 'Message';
+
+    const finalHtml = htmlProvided ? (options.html as string) : `<p>${finalText}</p>`;
+
     const msg = {
       to: options.to,
       from: { email: fromEmail, name: fromName },
       subject: options.subject,
-      text: options.text,
-      html: options.html || options.text,
+      text: finalText,
+      html: finalHtml,
     };
 
     try {
