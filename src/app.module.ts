@@ -14,6 +14,7 @@ import { CampaignsModule } from './campaigns/campaigns.module';
 import { TelephonyModule } from './telephony/telephony.module';
 import { AiModule } from './ai/ai.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { EmailTemplatesModule } from './email-templates/email-templates.module';
 import { CommonModule } from './common/common.module';
 import { SeedsModule } from './seeds/seeds.module';
 import { HealthController } from './health.controller';
@@ -97,6 +98,7 @@ import { SeedController } from './seed.controller';
     TelephonyModule,
     AiModule,
     AnalyticsModule,
+    EmailTemplatesModule,
   ],
   controllers: [HealthController, SeedController, EmailController],
 })
