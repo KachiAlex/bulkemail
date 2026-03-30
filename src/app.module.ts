@@ -60,12 +60,27 @@ import { SeedController } from './seed.controller';
     // Redis & Bull
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        redis: {
-          host: configService.get('REDIS_HOST'),
-          port: configService.get('REDIS_PORT'),
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.get('REDIS_URL');
+        const password = configService.get('REDIS_PASSWORD');
+        const tlsEnabled = configService.get('REDIS_TLS') === 'true';
+
+        if (redisUrl) {
+          const redisOptions: any = { url: redisUrl };
+          if (password) redisOptions.password = password;
+          if (tlsEnabled) redisOptions.tls = {};
+          return { redis: redisOptions };
+        }
+
+        return {
+          redis: {
+            host: configService.get('REDIS_HOST') || 'localhost',
+            port: Number(configService.get('REDIS_PORT')) || 6379,
+            password: password || undefined,
+            tls: tlsEnabled ? {} : undefined,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
 
