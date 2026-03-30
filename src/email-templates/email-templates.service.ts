@@ -48,7 +48,7 @@ export class EmailTemplatesService {
       { name: 'Newsletter', subject: 'Latest updates', body: '<p>Here are the latest updates...</p>', category: 'newsletter', isActive: true },
     ];
 
-    const created = [];
+    const created: EmailTemplate[] = [];
     for (const d of defaults) {
       const e = this.templatesRepo.create({ ...d, createdById: userId });
       created.push(await this.templatesRepo.save(e));
