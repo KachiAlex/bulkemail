@@ -304,62 +304,22 @@ class CRMAPI {
     html: string;
   }): Promise<void> {
     const user = this.getCurrentUser();
-    console.log('Calling sendCampaignEmail with user:', user.uid);
-    const sendCampaignEmail = httpsCallable(functions, 'sendCampaignEmail');
-    
-    await sendCampaignEmail({
-      to: emailData.to,
-      subject: emailData.subject,
-      html: emailData.html
-    });
-
-    // After successful send, save to Firestore
-    const now = new Date();
-    const emailMessage: any = {
-      threadId: '',
-      from: user.email || '',
-      to: [emailData.to],
-      subject: emailData.subject,
-      body: emailData.html,
-      isHtml: true,
-      isRead: true,
-      isReplied: false,
-      isForwarded: false,
-      timestamp: now,
-      messageId: `sent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    };
-
-    // Check if thread exists with this recipient
-    const existingThreads = await this.getEmailThreads();
-    const existingThread = existingThreads.find(
-      thread => thread.participants.includes(emailData.to)
-    );
-
-    if (existingThread) {
-      // Add to existing thread
-      emailMessage.threadId = existingThread.id;
-      await updateDoc(doc(db, 'emailThreads', existingThread.id), {
-        messages: [...existingThread.messages, emailMessage],
-        lastMessageAt: serverTimestamp()
-      });
-    } else {
-      // Create new thread with correct threadId from the start
-      emailMessage.threadId = 'temp';
-      const threadRef = await addDoc(collection(db, 'emailThreads'), {
-        userId: user.uid,
+    console.log('Calling sendEmail via Render backend with user:', user.uid);
+    const token = await auth.currentUser?.getIdToken();
+    const response = await fetch('https://pandicrm.onrender.com/api/email/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({
+        to: emailData.to,
         subject: emailData.subject,
-        participants: [user.email || '', emailData.to],
-        messages: [emailMessage],
-        isRead: true,
-        lastMessageAt: serverTimestamp(),
-        createdAt: serverTimestamp()
-      });
-      // Update with correct threadId
-      emailMessage.threadId = threadRef.id;
-      await updateDoc(doc(db, 'emailThreads', threadRef.id), {
-        messages: [emailMessage]
-      });
-    }
+        html: emailData.html
+      })
+    });
+    if (!response.ok) throw new Error('Failed to send email');
+    // Optionally, handle response data here
   }
 
   // Call Management
