@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
 import { User } from './users/entities/user.entity';
+import { EmailController } from './email/email.controller';
 
 // Modules
 import { AuthModule } from './auth/auth.module';
@@ -82,7 +83,7 @@ import { SeedController } from './seed.controller';
     AiModule,
     AnalyticsModule,
   ],
-  controllers: [HealthController, SeedController],
+  controllers: [HealthController, SeedController, EmailController],
 })
 export class AppModule {}
 
