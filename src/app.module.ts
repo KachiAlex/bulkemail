@@ -14,6 +14,7 @@ import { CampaignsModule } from './campaigns/campaigns.module';
 import { TelephonyModule } from './telephony/telephony.module';
 import { AiModule } from './ai/ai.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { EmailTemplatesModule } from './email-templates/email-templates.module';
 import { CommonModule } from './common/common.module';
 import { SeedsModule } from './seeds/seeds.module';
 import { HealthController } from './health.controller';
@@ -60,12 +61,27 @@ import { SeedController } from './seed.controller';
     // Redis & Bull
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        redis: {
-          host: configService.get('REDIS_HOST'),
-          port: configService.get('REDIS_PORT'),
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.get('REDIS_URL');
+        const password = configService.get('REDIS_PASSWORD');
+        const tlsEnabled = configService.get('REDIS_TLS') === 'true';
+
+        if (redisUrl) {
+          const redisOptions: any = { url: redisUrl };
+          if (password) redisOptions.password = password;
+          if (tlsEnabled) redisOptions.tls = {};
+          return { redis: redisOptions };
+        }
+
+        return {
+          redis: {
+            host: configService.get('REDIS_HOST') || 'localhost',
+            port: Number(configService.get('REDIS_PORT')) || 6379,
+            password: password || undefined,
+            tls: tlsEnabled ? {} : undefined,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
 
@@ -82,6 +98,7 @@ import { SeedController } from './seed.controller';
     TelephonyModule,
     AiModule,
     AnalyticsModule,
+    EmailTemplatesModule,
   ],
   controllers: [HealthController, SeedController, EmailController],
 })
