@@ -2,7 +2,9 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
+# Copy only package.json so `npm install` uses the updated package.json
+# (avoids a stale package-lock preventing new deps like webpack from installing)
+COPY package.json ./
 
 RUN npm install --legacy-peer-deps
 
