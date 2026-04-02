@@ -27,6 +27,13 @@ jobs:
         with:
           project_id: bulkemail-crm
 
+      - name: GCP diagnostics
+        run: |
+          echo "== IAM policy for project bulkemail-crm =="
+          gcloud projects get-iam-policy bulkemail-crm --format=json || true
+          echo "\n== Billing info for project bulkemail-crm =="
+          gcloud beta billing projects describe bulkemail-crm --format=json || gcloud billing projects describe bulkemail-crm --format=json || true
+
       - name: Debug repo layout
         run: |
           echo "Workspace files:" && ls -la
