@@ -8,6 +8,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,16 +27,16 @@ jobs:
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v1
         with:
-          project_id: bulkemail-crm
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: GCP diagnostics
         run: |
           echo "== Try enable Cloud Billing API (non-interactive) =="
-          gcloud services enable cloudbilling.googleapis.com --project=bulkemail-crm --quiet || true
+          gcloud services enable cloudbilling.googleapis.com --project=$GCP_PROJECT_ID --quiet || true
           echo "\n== IAM policy for project bulkemail-crm =="
-          gcloud projects get-iam-policy bulkemail-crm --format=json || true
+          gcloud projects get-iam-policy $GCP_PROJECT_ID --format=json || true
           echo "\n== Billing info for project bulkemail-crm =="
-          gcloud billing projects describe bulkemail-crm --format=json || true
+          gcloud billing projects describe $GCP_PROJECT_ID --format=json || true
 
       - name: Debug repo layout
         run: |
@@ -58,6 +60,7 @@ jobs:
       - name: Deploy function
         run: |
           gcloud functions deploy api \
+            --project=$GCP_PROJECT_ID \
             --region=us-central1 \
             --runtime=nodejs20 \
             --trigger-http \
