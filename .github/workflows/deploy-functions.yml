@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -24,17 +26,28 @@ jobs:
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: bulkemail-crm
-          install_components: 'gcloud functions'
 
-      - name: Build and deploy Cloud Functions
-        env:
-          GCLOUD_PROJECT: bulkemail-crm
+      - name: Debug repo layout
         run: |
-          cd functions
-          npm ci
-          npm run build
+          echo "Workspace files:" && ls -la
+          echo "Repo root listing:" && ls -la $GITHUB_WORKSPACE || true
+          echo "Checking for functions dir:" && if [ -d "$GITHUB_WORKSPACE/functions" ]; then echo "functions exists"; ls -la $GITHUB_WORKSPACE/functions; else echo "functions missing"; fi
 
-          # Deploy the exported function `api` (from src/index.ts -> export const api = ...)
+      - name: Build functions
+        if: ${{ always() }}
+        run: |
+          # ignore submodule issues and build if functions dir exists
+          if [ -d "$GITHUB_WORKSPACE/functions" ]; then
+            cd "$GITHUB_WORKSPACE/functions"
+            npm ci
+            npm run build
+          else
+            echo "No functions directory found in workspace; skipping build"
+            exit 1
+          fi
+
+      - name: Deploy function
+        run: |
           gcloud functions deploy api \
             --region=us-central1 \
             --runtime=nodejs20 \
