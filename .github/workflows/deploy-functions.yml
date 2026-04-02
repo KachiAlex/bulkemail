@@ -29,10 +29,12 @@ jobs:
 
       - name: GCP diagnostics
         run: |
-          echo "== IAM policy for project bulkemail-crm =="
+          echo "== Try enable Cloud Billing API (non-interactive) =="
+          gcloud services enable cloudbilling.googleapis.com --project=bulkemail-crm --quiet || true
+          echo "\n== IAM policy for project bulkemail-crm =="
           gcloud projects get-iam-policy bulkemail-crm --format=json || true
           echo "\n== Billing info for project bulkemail-crm =="
-          gcloud beta billing projects describe bulkemail-crm --format=json || gcloud billing projects describe bulkemail-crm --format=json || true
+          gcloud billing projects describe bulkemail-crm --format=json || true
 
       - name: Debug repo layout
         run: |
