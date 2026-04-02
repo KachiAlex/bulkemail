@@ -24,7 +24,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: bulkemail-crm
-          install_components: 'gcloud functions'
+          
 
       - name: Build and deploy Cloud Functions
         env:
