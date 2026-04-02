@@ -1,4 +1,4 @@
-name: Deploy Cloud Functions
+﻿name: Deploy Cloud Functions
 
 on:
   push:
@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -24,21 +26,21 @@ jobs:
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: bulkemail-crm
-          
-      - name: Build and deploy Cloud Functions
-  env:
-    GCLOUD_PROJECT: bulkemail-crm
-  run: |
-    mkdir -p repo-full
-    git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} repo-full || git clone https://github.com/${{ github.repository }} repo-full
-    cd repo-full/functions
-    npm ci
-    npm run build
 
-    # Deploy the exported function `api` (from src/index.ts -> export const api = ...)
-    gcloud functions deploy api \
-      --region=us-central1 \
-      --runtime=nodejs20 \
-      --trigger-http \
-      --entry-point=api \
-      --allow-unauthenticated
+      - name: Build and deploy Cloud Functions
+        env:
+          GCLOUD_PROJECT: bulkemail-crm
+        run: |
+          mkdir -p repo-full
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} repo-full || git clone https://github.com/${{ github.repository }} repo-full
+          cd repo-full/functions
+          npm ci
+          npm run build
+
+          # Deploy the exported function `api` (from src/index.ts -> export const api = ...)
+          gcloud functions deploy api \
+            --region=us-central1 \
+            --runtime=nodejs20 \
+            --trigger-http \
+            --entry-point=api \
+            --allow-unauthenticated
