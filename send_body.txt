@@ -1,0 +1,1 @@
+{"message":"Campaign can only be sent from draft or paused status","error":"Bad Request","statusCode":400}

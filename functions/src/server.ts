@@ -7,7 +7,33 @@ import campaignsRouter from './routes/campaigns';
 
 export function createApp() {
   if (!admin.apps.length) {
-    admin.initializeApp();
+    const raw = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_B64 || '';
+    if (raw) {
+      let sa: any = null;
+      try {
+        sa = JSON.parse(raw);
+      } catch (_) {
+        // try base64 decode fallback
+        try {
+          const decoded = Buffer.from(raw, 'base64').toString('utf8');
+          sa = JSON.parse(decoded);
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT (raw and base64) - falling back to default admin.initializeApp()', err);
+        }
+      }
+
+      if (sa) {
+        const appOptions: any = { credential: admin.credential.cert(sa) };
+        if (process.env.FIREBASE_DATABASE_URL) appOptions.databaseURL = process.env.FIREBASE_DATABASE_URL;
+        if (process.env.FIREBASE_STORAGE_BUCKET) appOptions.storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
+        admin.initializeApp(appOptions);
+      } else {
+        admin.initializeApp();
+      }
+    } else {
+      admin.initializeApp();
+    }
   }
 
   const app = express();

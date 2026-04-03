@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InjectQueue } from '@nestjs/bull';
@@ -13,6 +13,7 @@ import { SmsService } from './services/sms.service';
 
 @Injectable()
 export class CampaignsService {
+  private readonly logger = new Logger(CampaignsService.name);
   constructor(
     @InjectRepository(Campaign)
     private campaignsRepository: Repository<Campaign>,
@@ -102,62 +103,91 @@ export class CampaignsService {
       await this.campaignsRepository.save(campaign);
       
       // Schedule the campaign
-      await this.campaignsQueue.add('send-scheduled-campaign', { campaignId: id }, {
-        delay: new Date(campaign.scheduledAt).getTime() - Date.now(),
-      });
+      try {
+        await this.campaignsQueue.add('send-scheduled-campaign', { campaignId: id }, {
+          delay: new Date(campaign.scheduledAt).getTime() - Date.now(),
+        });
+      } catch (err) {
+        this.logger.error(`Failed to schedule campaign ${id}: ${err?.message}`, err?.stack);
+        throw err;
+      }
     } else {
       campaign.status = CampaignStatus.SENDING;
       await this.campaignsRepository.save(campaign);
       
       // Queue the campaign for immediate sending
-      await this.campaignsQueue.add('send-campaign', { campaignId: id });
+      try {
+        await this.campaignsQueue.add('send-campaign', { campaignId: id });
+      } catch (err) {
+        this.logger.error(`Failed to enqueue campaign ${id} for sending: ${err?.message}`, err?.stack);
+        throw err;
+      }
     }
 
     return campaign;
   }
 
   async processCampaignSending(campaignId: string): Promise<void> {
-    const campaign = await this.findOne(campaignId);
-    
-    campaign.status = CampaignStatus.SENDING;
-    await this.campaignsRepository.save(campaign);
+    try {
+      const campaign = await this.findOne(campaignId);
+      
+      this.logger.log(`Starting processing for campaign ${campaignId}`);
+      campaign.status = CampaignStatus.SENDING;
+      await this.campaignsRepository.save(campaign);
 
-    const messages = await this.messagesRepository.find({
-      where: { campaignId, status: MessageStatus.PENDING },
-      relations: ['contact'],
-    });
+      const messages = await this.messagesRepository.find({
+        where: { campaignId, status: MessageStatus.PENDING },
+        relations: ['contact'],
+      });
 
-    for (const message of messages) {
-      try {
-        if (campaign.type === 'email') {
-          await this.emailService.sendEmail({
-            to: message.recipientEmail,
-            subject: message.subject,
-            text: message.content,
-            html: campaign.htmlContent,
-          });
-        } else if (campaign.type === 'sms') {
-          await this.smsService.sendSms({
-            to: message.recipientPhone,
-            body: message.content,
-          });
+      this.logger.log(`Found ${messages.length} pending messages for campaign ${campaignId}`);
+
+      for (const message of messages) {
+        try {
+          if (campaign.type === 'email') {
+            await this.emailService.sendEmail({
+              to: message.recipientEmail,
+              subject: message.subject,
+              text: message.content,
+              html: campaign.htmlContent,
+            });
+          } else if (campaign.type === 'sms') {
+            await this.smsService.sendSms({
+              to: message.recipientPhone,
+              body: message.content,
+            });
+          }
+
+          message.status = MessageStatus.SENT;
+          message.sentAt = new Date();
+          campaign.sentCount++;
+        } catch (error) {
+          this.logger.warn(`Message ${message.id} failed for campaign ${campaignId}: ${error?.message}`);
+          message.status = MessageStatus.FAILED;
+          message.errorMessage = error?.message || String(error);
+          campaign.failedCount++;
         }
 
-        message.status = MessageStatus.SENT;
-        message.sentAt = new Date();
-        campaign.sentCount++;
-      } catch (error) {
-        message.status = MessageStatus.FAILED;
-        message.errorMessage = error.message;
-        campaign.failedCount++;
+        await this.messagesRepository.save(message);
       }
 
-      await this.messagesRepository.save(message);
+      campaign.status = CampaignStatus.SENT;
+      campaign.sentAt = new Date();
+      await this.campaignsRepository.save(campaign);
+      this.logger.log(`Finished processing campaign ${campaignId}. sent=${campaign.sentCount} failed=${campaign.failedCount}`);
+    } catch (err) {
+      this.logger.error(`Unhandled error processing campaign ${campaignId}: ${err?.message}`, err?.stack);
+      try {
+        const campaign = await this.campaignsRepository.findOne({ where: { id: campaignId } });
+        if (campaign) {
+          campaign.status = CampaignStatus.FAILED;
+          await this.campaignsRepository.save(campaign);
+        }
+      } catch (saveErr) {
+        this.logger.error(`Failed to mark campaign ${campaignId} as failed: ${saveErr?.message}`, saveErr?.stack);
+      }
+      throw err;
     }
-
-    campaign.status = CampaignStatus.SENT;
-    campaign.sentAt = new Date();
-    await this.campaignsRepository.save(campaign);
   }
 
   async pauseCampaign(id: string): Promise<Campaign> {

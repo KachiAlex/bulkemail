@@ -45,6 +45,20 @@ export class CampaignsController {
     return this.campaignsService.sendCampaign(id);
   }
 
+  // Temporary debug endpoint to process a campaign immediately (bypass the Bull queue).
+  // Use only for debugging — remove after diagnosing worker issues.
+  @Post(':id/debug/process')
+  @ApiOperation({ summary: '[DEBUG] Immediately process campaign (bypass queue)' })
+  async debugProcess(@Param('id') id: string) {
+    // Returns void on success; wrap in try/catch for clearer error propagation
+    try {
+      await this.campaignsService.processCampaignSending(id);
+      return { ok: true, message: `Processed campaign ${id}` };
+    } catch (err) {
+      return { ok: false, message: err?.message || String(err) };
+    }
+  }
+
   @Post(':id/pause')
   @ApiOperation({ summary: 'Pause campaign' })
   pauseCampaign(@Param('id') id: string) {

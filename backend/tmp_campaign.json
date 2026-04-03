@@ -1,0 +1,1 @@
+{"name":"Test Campaign","type":"email","subject":"Hello from CI","content":"<p>This is a test campaign</p>","recipientContactIds":["fb216dac-031f-4ef0-b7dd-701f1b8e80ff"]}

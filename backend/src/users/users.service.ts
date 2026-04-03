@@ -72,5 +72,24 @@ export class UsersService {
   async updateLastLogin(userId: string): Promise<void> {
     await this.usersRepository.update(userId, { lastLoginAt: new Date() });
   }
+
+  async findOrCreateFromFirebase(email: string, firstName?: string, lastName?: string): Promise<User> {
+    let user = await this.findByEmail(email);
+    if (user) return user;
+
+    // Create a user record for Firebase-authenticated users. Generate a random password
+    // so the account cannot be used to login via backend password flows.
+    const randomPassword = Math.random().toString(36).slice(-16);
+    const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+    const newUser = this.usersRepository.create({
+      email,
+      password: hashedPassword,
+      firstName: firstName || '',
+      lastName: lastName || '',
+    } as any);
+
+    return this.usersRepository.save(newUser);
+  }
 }
 
