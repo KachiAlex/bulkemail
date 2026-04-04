@@ -15,13 +15,30 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || ''
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Only initialize Firebase when an API key is provided (prevents invalid-api-key at runtime)
+const hasFirebaseConfig = Boolean(firebaseConfig.apiKey && firebaseConfig.apiKey.length > 0);
 
-// Initialize services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-export const functions = getFunctions(app);
+if (hasFirebaseConfig) {
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
 
-export default app;
+  // Initialize services
+  export const auth = getAuth(app);
+  export const db = getFirestore(app);
+  export const storage = getStorage(app);
+  export const functions = getFunctions(app);
+
+  export default app;
+} else {
+  // Export safe no-op shims so the frontend can run against backend JWT APIs during migration.
+  console.warn('Firebase not configured — running in backend-only mode');
+
+  // Minimal shim implementations used by the app to avoid runtime errors.
+  // These do NOT provide Firebase functionality — they are placeholders until Firebase is removed.
+  export const auth: any = { currentUser: null };
+  export const db: any = {};
+  export const storage: any = {};
+  export const functions: any = {};
+
+  export default null;
+}
