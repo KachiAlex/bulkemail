@@ -25,6 +25,7 @@
     "seed:prod": "node scripts/seed-production.js",
     "migrate:prod": "node scripts/run-migrations.js"
     ,"build:netlify": "cd frontend && npm ci && npm run build && cd .. && node scripts/copy-netlify-functions.js"
+    ,"db:migrate": "ts-node scripts/run-migrations.ts"
   },
   "dependencies": {
     "@nestjs/bull": "^10.0.1",
