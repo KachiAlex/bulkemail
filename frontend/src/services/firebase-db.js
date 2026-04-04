@@ -1,129 +1,45 @@
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  orderBy,
-  limit 
-} from 'firebase/firestore';
-import { db } from '../firebase-config';
+import httpClient from './httpClient';
 
-// Firestore service for CRM data
 export const dbService = {
-  // Contacts
-  async getContacts(userId) {
-    const q = query(
-      collection(db, 'contacts'),
-      where('createdById', '==', userId),
-      orderBy('createdAt', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  async getContacts() {
+    const { data } = await httpClient.get('/contacts');
+    return data;
   },
 
   async getContact(contactId) {
-    const docRef = doc(db, 'contacts', contactId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return { id: docSnap.id, ...docSnap.data() };
-    }
-    throw new Error('Contact not found');
+    const { data } = await httpClient.get(`/contacts/${contactId}`);
+    return data;
   },
 
   async createContact(contactData) {
-    const docRef = await addDoc(collection(db, 'contacts'), {
-      ...contactData,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-    return { id: docRef.id, ...contactData };
+    const { data } = await httpClient.post('/contacts', contactData);
+    return data;
   },
 
   async updateContact(contactId, updateData) {
-    const docRef = doc(db, 'contacts', contactId);
-    await updateDoc(docRef, {
-      ...updateData,
-      updatedAt: new Date()
-    });
+    await httpClient.put(`/contacts/${contactId}`, updateData);
   },
 
   async deleteContact(contactId) {
-    await deleteDoc(doc(db, 'contacts', contactId));
+    await httpClient.delete(`/contacts/${contactId}`);
   },
 
-  // Campaigns
-  async getCampaigns(userId) {
-    const q = query(
-      collection(db, 'campaigns'),
-      where('createdById', '==', userId),
-      orderBy('createdAt', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  async getCampaigns() {
+    const { data } = await httpClient.get('/campaigns');
+    return data;
   },
 
   async createCampaign(campaignData) {
-    const docRef = await addDoc(collection(db, 'campaigns'), {
-      ...campaignData,
-      status: 'draft',
-      totalRecipients: 0,
-      sentCount: 0,
-      openedCount: 0,
-      clickedCount: 0,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-    return { id: docRef.id, ...campaignData };
+    const { data } = await httpClient.post('/campaigns', campaignData);
+    return data;
   },
 
   async updateCampaign(campaignId, updateData) {
-    const docRef = doc(db, 'campaigns', campaignId);
-    await updateDoc(docRef, {
-      ...updateData,
-      updatedAt: new Date()
-    });
+    await httpClient.put(`/campaigns/${campaignId}`, updateData);
   },
 
-  // Analytics
-  async getDashboardStats(userId) {
-    // Get contacts count
-    const contactsQuery = query(
-      collection(db, 'contacts'),
-      where('createdById', '==', userId)
-    );
-    const contactsSnapshot = await getDocs(contactsQuery);
-    const totalContacts = contactsSnapshot.size;
-
-    // Get campaigns count
-    const campaignsQuery = query(
-      collection(db, 'campaigns'),
-      where('createdById', '==', userId)
-    );
-    const campaignsSnapshot = await getDocs(campaignsQuery);
-    const totalCampaigns = campaignsSnapshot.size;
-
-    return {
-      contacts: {
-        total: totalContacts,
-        newThisMonth: 0, // Calculate based on createdAt
-        avgLeadScore: 75
-      },
-      campaigns: {
-        total: totalCampaigns,
-        totalSent: 0,
-        openRate: 25.5,
-        clickThroughRate: 8.2
-      },
-      calls: {
-        total: 0,
-        completed: 0,
-        avgDuration: 0
-      }
-    };
+  async getDashboardStats() {
+    const { data } = await httpClient.get('/analytics/dashboard');
+    return data;
   }
 };

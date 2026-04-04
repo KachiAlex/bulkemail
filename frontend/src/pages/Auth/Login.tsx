@@ -13,10 +13,8 @@ import {
   Alert,
 } from '@mui/material';
 import { toast } from 'react-toastify';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { loginSuccess } from '../../store/slices/authSlice';
 import { authApi } from '../../services/authApi';
-import { auth } from '../../../firebase-config';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -34,23 +32,7 @@ export default function Login() {
     try {
       const response = await authApi.login({ email, password });
 
-      // Sign into Firebase so Firestore CRM data (contacts, opportunities, tasks) is accessible.
-      // If no Firebase user exists for this account yet, create one on the fly.
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-      } catch (firebaseErr: any) {
-        if (
-          firebaseErr.code === 'auth/user-not-found' ||
-          firebaseErr.code === 'auth/invalid-credential'
-        ) {
-          try {
-            await createUserWithEmailAndPassword(auth, email, password);
-          } catch {
-            // Firebase user creation failed — CRM data calls will be limited
-          }
-        }
-        // Non-fatal: JWT login already succeeded
-      }
+      // JWT login succeeded; client will use backend APIs for data.
 
       dispatch(
         loginSuccess({

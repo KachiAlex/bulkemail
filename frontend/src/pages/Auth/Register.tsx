@@ -14,10 +14,8 @@ import {
   Grid,
 } from '@mui/material';
 import { toast } from 'react-toastify';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { loginSuccess } from '../../store/slices/authSlice';
 import { authApi } from '../../services/authApi';
-import { auth } from '../../../firebase-config';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -55,17 +53,7 @@ export default function Register() {
         password: formData.password,
       });
 
-      // Create or sign into Firebase so Firestore CRM data is accessible
-      try {
-        await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      } catch (firebaseErr: any) {
-        if (firebaseErr.code === 'auth/email-already-in-use') {
-          try {
-            await signInWithEmailAndPassword(auth, formData.email, formData.password);
-          } catch { /* non-fatal */ }
-        }
-        // Non-fatal: JWT registration already succeeded
-      }
+      // Registration succeeded via backend JWT; client will use backend APIs for data access.
 
       dispatch(
         loginSuccess({

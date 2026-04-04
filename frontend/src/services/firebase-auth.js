@@ -1,75 +1,28 @@
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut,
-  onAuthStateChanged 
-} from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase-config';
+import { authApi } from './authApi';
 
-// Auth service using Firebase Auth
+// Auth service replaced by backend JWT API
 export const authService = {
-  // Register new user
   async register(email, password, userData) {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
-      // Store additional user data in Firestore
-      await setDoc(doc(db, 'users', user.uid), {
-        ...userData,
-        createdAt: new Date(),
-        role: 'sales_rep'
-      });
-      
-      return {
-        user: {
-          id: user.uid,
-          email: user.email,
-          ...userData
-        },
-        accessToken: await user.getIdToken()
-      };
-    } catch (error) {
-      throw new Error(error.message);
-    }
+    const res = await authApi.register({ email, password, ...userData });
+    return res;
   },
 
-  // Login user
   async login(email, password) {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
-      // Get user data from Firestore
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      const userData = userDoc.data();
-      
-      return {
-        user: {
-          id: user.uid,
-          email: user.email,
-          ...userData
-        },
-        accessToken: await user.getIdToken()
-      };
-    } catch (error) {
-      throw new Error(error.message);
-    }
+    const res = await authApi.login({ email, password });
+    return res;
   },
 
-  // Logout user
   async logout() {
-    await signOut(auth);
+    await authApi.logout();
   },
 
-  // Get current user
   getCurrentUser() {
-    return auth.currentUser;
+    // Frontend state should store user from JWT login flow
+    return null;
   },
 
-  // Listen to auth state changes
-  onAuthStateChanged(callback) {
-    return onAuthStateChanged(auth, callback);
+  onAuthStateChanged(/*callback*/) {
+    // Not applicable for backend JWT flow; keep a no-op for now
+    return () => {};
   }
 };
