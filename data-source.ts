@@ -2,7 +2,11 @@ import 'dotenv/config';
 import { DataSource } from 'typeorm';
 import * as path from 'path';
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl =
+  process.env.DATABASE_URL ||
+  process.env.NETLIFY_DATABASE_URL ||
+  process.env.NETLIFY_DATABASE_URL_UNPOOLED ||
+  process.env.NEON_DATABASE_URL;
 
 const dataSourceOptions: any = {
   type: 'postgres',
