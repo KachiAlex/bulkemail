@@ -22,248 +22,142 @@ import {
   Pipeline,
   EmailThread,
   Call,
-  SMS,
-  Campaign,
-  Segment,
-  EmailTemplate,
-  Dashboard,
-  LeadScore,
-  AIRecommendation
-} from '../types/crm';
-import { validateContactEmail } from '../utils/emailValidator';
+  import httpClient from './httpClient';
+  import { contactsApi } from './contactsApi';
+  import { campaignsApi } from './campaignsApi';
+  import { aiApi } from './aiApi';
+  import { analyticsApi } from './analyticsApi';
+  import { callsApi } from './callsApi';
 
-class CRMAPI {
-  private getCurrentUser() {
-    const user = auth.currentUser;
-    if (!user) {
-      console.log('No authenticated Firebase user found');
-      throw new Error('User not authenticated');
-    }
-    console.log('Using authenticated Firebase user:', user.uid);
-    return user;
-  }
+  // Adapter: expose the legacy `crmAPI` interface but call backend HTTP endpoints
+  export const crmAPI = {
+    // Contacts
+    async getContacts(filters?: any) {
+      return contactsApi.list(filters);
+    },
 
-  // Contact Management
-  async getContacts(filters?: any): Promise<Contact[]> {
-    try {
-      const user = this.getCurrentUser();
-      let q = query(collection(db, 'contacts'), where('createdById', '==', user.uid));
-      
-      if (filters?.status) {
-        q = query(q, where('status', '==', filters.status));
+    async getContact(id: string) {
+      return contactsApi.get(id);
+    },
+
+    async createContact(payload: any) {
+      return contactsApi.create(payload);
+    },
+
+    async updateContact(id: string, payload: any) {
+      return contactsApi.update(id, payload);
+    },
+
+    async deleteContact(id: string) {
+      return contactsApi.remove(id);
+    },
+
+    async bulkDeleteContacts(ids: string[]) {
+      return contactsApi.bulkDelete(ids);
+    },
+
+    // Campaigns
+    async getCampaigns(filters?: any) {
+      return campaignsApi.list(filters);
+    },
+
+    async getCampaign(id: string) {
+      return campaignsApi.get(id);
+    },
+
+    async createCampaign(payload: any) {
+      return campaignsApi.create(payload);
+    },
+
+    async updateCampaign(id: string, payload: any) {
+      return campaignsApi.update(id, payload);
+    },
+
+    async deleteCampaign(id: string) {
+      return campaignsApi.remove(id);
+    },
+
+    async sendCampaign(id: string) {
+      return campaignsApi.send(id);
+    },
+
+    // Email threads & sending
+    async getEmailThreads() {
+      try {
+        const { data } = await httpClient.get('/email/threads');
+        return data;
+      } catch (err) {
+        console.warn('email threads endpoint missing, returning empty list', err);
+        return [];
       }
-      if (filters?.category) {
-        q = query(q, where('category', '==', filters.category));
-      }
-      if (filters?.tags && Array.isArray(filters.tags) && filters.tags.length > 0) {
-        q = query(q, where('tags', 'array-contains-any', filters.tags));
-      }
+    },
 
-      const snapshot = await getDocs(q);
-      let contacts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Contact));
-      
-      // Client-side sorting
-      contacts.sort((a, b) => {
-        const dateA = a.lastActivityAt || a.createdAt;
-        const dateB = b.lastActivityAt || b.createdAt;
-        return new Date(dateB).getTime() - new Date(dateA).getTime();
-      });
-      
-      return contacts;
-    } catch (error) {
-      console.error('Error fetching contacts:', error);
-      return [];
-    }
-  }
+    async sendEmail(payload: any) {
+      return httpClient.post('/email/send', payload).then(r => r.data);
+    },
 
-  async getContact(id: string): Promise<Contact> {
-    const docRef = doc(db, 'contacts', id);
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) throw new Error('Contact not found');
-    return { id: docSnap.id, ...docSnap.data() } as Contact;
-  }
+    // Calls
+    async getCalls() {
+      return callsApi.getAll();
+    },
 
-  async createContact(contact: Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>): Promise<Contact> {
-    const user = this.getCurrentUser();
-    
-    // Validate email if provided
-    if (contact.email) {
-      const validation = await validateContactEmail(contact.email, { 
-        showToast: true,
-        useAPI: true  // Automatically uses API if keys are configured
-      });
-      
-      // Store validation result in contact (Firestore rejects undefined field values)
-      const contactWithValidation = {
-        ...contact,
-        emailValidated: validation.validation.isValid,
-        emailValidationScore: validation.validation.score,
-        emailValidationReason: validation.validation.reason,
-        emailValidationProvider: validation.validation.provider ?? null
-      };
-      
-      const docRef = await addDoc(collection(db, 'contacts'), {
-        ...contactWithValidation,
-        createdById: user.uid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      return { id: docRef.id, ...contactWithValidation, createdAt: new Date(), updatedAt: new Date() } as Contact;
-    }
-    
-    // No email provided, create contact normally
-    const docRef = await addDoc(collection(db, 'contacts'), {
-      ...contact,
-      createdById: user.uid,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-    return { id: docRef.id, ...contact, createdAt: new Date(), updatedAt: new Date() } as Contact;
-  }
+    async createCall(payload: any) {
+      return callsApi.create(payload);
+    },
 
-  async updateContact(id: string, updates: Partial<Contact>): Promise<void> {
-    const docRef = doc(db, 'contacts', id);
-    
-    // Validate email if being updated
-    if (updates.email) {
-      const validation = await validateContactEmail(updates.email, { 
-        showToast: true,
-        useAPI: true  // Automatically uses API if keys are configured
-      });
-      
-      // Add validation result to updates
-      const updatesWithValidation = {
-        ...updates,
-        emailValidated: validation.validation.isValid,
-        emailValidationScore: validation.validation.score,
-        emailValidationReason: validation.validation.reason,
-        emailValidationProvider: validation.validation.provider ?? null,
-        updatedAt: serverTimestamp()
-      };
-      
-      await updateDoc(docRef, updatesWithValidation);
-    } else {
-      await updateDoc(docRef, {
-        ...updates,
-        updatedAt: serverTimestamp()
-      });
-    }
-  }
+    // Analytics
+    async getDashboardStats() {
+      return analyticsApi.getDashboard();
+    },
 
-  async deleteContact(id: string): Promise<void> {
-    await deleteDoc(doc(db, 'contacts', id));
-  }
+    // Tasks, opportunities, accounts, activities — map to REST endpoints if available
+    async getTasks() {
+      const { data } = await httpClient.get('/tasks');
+      return data;
+    },
 
-  // Account Management
-  async getAccounts(): Promise<Account[]> {
-    const user = this.getCurrentUser();
-    const q = query(collection(db, 'accounts'), where('createdById', '==', user.uid));
-    const snapshot = await getDocs(q);
-    let accounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
-    
-    accounts.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-    return accounts;
-  }
+    async createTask(payload: any) {
+      const { data } = await httpClient.post('/tasks', payload);
+      return data;
+    },
 
-  async createAccount(account: Omit<Account, 'id' | 'contacts' | 'opportunities' | 'createdAt' | 'updatedAt'>): Promise<Account> {
-    const user = this.getCurrentUser();
-    const docRef = await addDoc(collection(db, 'accounts'), {
-      ...account,
-      contacts: [],
-      opportunities: [],
-      createdById: user.uid,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-    return { id: docRef.id, ...account, contacts: [], opportunities: [], createdAt: new Date(), updatedAt: new Date() } as Account;
-  }
+    async updateTask(id: string, payload: any) {
+      return httpClient.patch(`/tasks/${id}`, payload).then(r => r.data);
+    },
 
-  // Opportunity Management
-  async getOpportunities(): Promise<Opportunity[]> {
-    const user = this.getCurrentUser();
-    const q = query(collection(db, 'opportunities'), where('createdById', '==', user.uid));
-    const snapshot = await getDocs(q);
-    let opportunities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Opportunity));
-    
-    opportunities.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-    return opportunities;
-  }
+    async deleteTask(id: string) {
+      return httpClient.delete(`/tasks/${id}`).then(r => r.data);
+    },
 
-  async createOpportunity(opportunity: Omit<Opportunity, 'id' | 'createdAt' | 'updatedAt'>): Promise<Opportunity> {
-    const user = this.getCurrentUser();
-    const docRef = await addDoc(collection(db, 'opportunities'), {
-      ...opportunity,
-      createdById: user.uid,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-    return { id: docRef.id, ...opportunity, createdAt: new Date(), updatedAt: new Date() } as Opportunity;
-  }
+    async getOpportunities() {
+      const { data } = await httpClient.get('/opportunities');
+      return data;
+    },
 
-  // Activity Timeline
-  async getActivities(contactId?: string, accountId?: string, opportunityId?: string): Promise<Activity[]> {
-    const user = this.getCurrentUser();
-    let q = query(collection(db, 'activities'), where('userId', '==', user.uid));
-    
-    if (contactId) {
-      q = query(q, where('contactId', '==', contactId));
-    }
-    if (accountId) {
-      q = query(q, where('accountId', '==', accountId));
-    }
-    if (opportunityId) {
-      q = query(q, where('opportunityId', '==', opportunityId));
-    }
+    async createOpportunity(payload: any) {
+      const { data } = await httpClient.post('/opportunities', payload);
+      return data;
+    },
 
-    const snapshot = await getDocs(q);
-    let activities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Activity));
-    
-    activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    return activities;
-  }
+    async getAccounts() {
+      const { data } = await httpClient.get('/accounts');
+      return data;
+    },
 
-  async createActivity(activity: Omit<Activity, 'id'>): Promise<Activity> {
-    const docRef = await addDoc(collection(db, 'activities'), activity);
-    return { id: docRef.id, ...activity } as Activity;
-  }
+    async createAccount(payload: any) {
+      const { data } = await httpClient.post('/accounts', payload);
+      return data;
+    },
 
-  // Task Management
-  async getTasks(): Promise<Task[]> {
-    const user = this.getCurrentUser();
-    const q = query(collection(db, 'tasks'), where('assignedTo', '==', user.uid));
-    const snapshot = await getDocs(q);
-    let tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
-    
-    tasks.sort((a, b) => {
-      const aTime = a.dueDate ? new Date(a.dueDate as any).getTime() : Number.MAX_SAFE_INTEGER;
-      const bTime = b.dueDate ? new Date(b.dueDate as any).getTime() : Number.MAX_SAFE_INTEGER;
-      return aTime - bTime;
-    });
-    return tasks;
-  }
+    // AI helpers
+    async generateContent(payload: any) {
+      return aiApi.generateContent(payload);
+    },
 
-  async createTask(task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task> {
-    const user = this.getCurrentUser();
-    const docRef = await addDoc(collection(db, 'tasks'), {
-      ...task,
-      assignedTo: (task as any).assignedTo || user.uid,
-      createdById: user.uid,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-    return { id: docRef.id, ...task, createdAt: new Date(), updatedAt: new Date() } as Task;
-  }
-
-  async updateTask(id: string, updates: Partial<Task>): Promise<void> {
-    const ref = doc(db, 'tasks', id);
-    await updateDoc(ref, { ...updates, updatedAt: serverTimestamp() });
-  }
-
-  async deleteTask(id: string): Promise<void> {
-    await deleteDoc(doc(db, 'tasks', id));
-  }
-
-  // Pipeline Management
+    async analyzeLeadScore(payload: any) {
+      return aiApi.analyzeLeadScore(payload);
+    },
+  };
   async getPipelines(): Promise<Pipeline[]> {
     const user = this.getCurrentUser();
     const q = query(collection(db, 'pipelines'), where('createdById', '==', user.uid));
