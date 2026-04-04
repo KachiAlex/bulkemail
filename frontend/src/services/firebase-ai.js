@@ -1,41 +1,32 @@
-// Firebase Cloud Functions for AI processing
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../firebase-config';
+// Adapter: call backend AI endpoints instead of Firebase Cloud Functions
+import { aiApi } from './aiApi';
 
 export const aiService = {
-  // Generate AI content for campaigns
-  async generateContent(prompt, type = 'email') {
-    const generateContent = httpsCallable(functions, 'generateContent');
+  async generateContent(prompt, type = 'email', context = {}) {
+    const payload = { prompt, type, context };
     try {
-      const result = await generateContent({ prompt, type });
-      return result.data;
-    } catch (error) {
-      console.error('AI content generation failed:', error);
-      throw new Error('Failed to generate AI content');
+      return await aiApi.generateContent(payload);
+    } catch (err) {
+      console.error('AI generateContent failed:', err);
+      throw err;
     }
   },
 
-  // Analyze lead score
   async analyzeLeadScore(contactData) {
-    const analyzeLead = httpsCallable(functions, 'analyzeLead');
     try {
-      const result = await analyzeLead({ contactData });
-      return result.data;
-    } catch (error) {
-      console.error('Lead analysis failed:', error);
-      return { score: 50, reasoning: 'Unable to analyze lead' };
+      return await aiApi.analyzeLeadScore({ contactData });
+    } catch (err) {
+      console.error('AI analyzeLeadScore failed:', err);
+      return { score: 50, reasoning: 'Unable to analyze lead', factors: [], recommendations: [] };
     }
   },
 
-  // Summarize call
-  async summarizeCall(transcript) {
-    const summarizeCall = httpsCallable(functions, 'summarizeCall');
+  async summarizeCall(transcript, duration, contactId) {
     try {
-      const result = await summarizeCall({ transcript });
-      return result.data;
-    } catch (error) {
-      console.error('Call summarization failed:', error);
-      return { summary: 'Unable to generate summary', actionItems: [] };
+      return await aiApi.summarizeCall({ transcript, duration, contactId });
+    } catch (err) {
+      console.error('AI summarizeCall failed:', err);
+      return { summary: 'Unable to generate summary', actionItems: [], sentiment: 'neutral', keyTopics: [] };
     }
   }
 };
