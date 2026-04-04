@@ -15,7 +15,7 @@ async function bootstrap() {
   app.use(compression());
 
   // CORS — supports comma-separated list of allowed origins
-  const rawCorsOrigin = configService.get<string>('CORS_ORIGIN') || 'http://localhost:5173';
+  const rawCorsOrigin = configService.get<string>('CORS_ORIGIN') || 'http://localhost:5173,https://pandicrm.netlify.app';
   const allowedOrigins = rawCorsOrigin.split(',').map((o) => o.trim()).filter(Boolean);
   console.log('CORS debug: allowedOrigins =', allowedOrigins);
   app.enableCors({
