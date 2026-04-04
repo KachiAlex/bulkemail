@@ -92,3 +92,7 @@ uploads/
 
 # Local Netlify folder
 .netlify
+
+# Ensure built frontend artifacts are not committed
+frontend/dist/
+dist/
