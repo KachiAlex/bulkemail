@@ -76,7 +76,7 @@ import { toast } from 'react-toastify';
 import { crmAPI } from '../../services/crm-api';
 import { format } from 'date-fns/format';
 import { safeConvertToDate as safeDateHelper } from '../../utils/dateHelpers';
-import { auth } from '../../../firebase-config';
+import { authApi } from '../../services/authApi';
 
 // Email Template interface
 interface EmailTemplate {
@@ -167,7 +167,8 @@ export default function Email() {
   const fetchEmails = async () => {
     try {
       const threads = await crmAPI.getEmailThreads();
-      const userEmail = auth.currentUser?.email || '';
+      const profile = await authApi.getProfile().catch(() => null);
+      const userEmail = profile?.email || '';
       // Flatten thread messages into individual emails for display
       const emails = threads.flatMap(thread => 
         (thread.messages || []).map((msg: any) => {
