@@ -5,13 +5,14 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
 
+// Read Firebase config from environment variables (Vite: VITE_*)
 const firebaseConfig = {
-  apiKey: "AIzaSyDYMfJp4hZe1JACTdqA3uDdWggSZI365GU",
-  authDomain: "bulkemail-crm.firebaseapp.com",
-  projectId: "bulkemail-crm",
-  storageBucket: "bulkemail-crm.firebasestorage.app",
-  messagingSenderId: "722774203249",
-  appId: "1:722774203249:web:8aa683b0ae55852389f4d0"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || ''
 };
 
 // Initialize Firebase

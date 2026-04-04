@@ -4,8 +4,8 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User, UserRole, UserStatus } from '../users/entities/user.entity';
 
-// Firebase Web API key (public — same key present in the frontend bundle)
-const FIREBASE_WEB_API_KEY = 'AIzaSyDYMfJp4hZe1JACTdqA3uDdWggSZI365GU';
+// Firebase Web API key read from environment variable to avoid committing secrets
+const FIREBASE_WEB_API_KEY = process.env.FIREBASE_WEB_API_KEY || '';
 
 @Injectable()
 export class AdminSeed {
@@ -49,8 +49,10 @@ export class AdminSeed {
     console.log(`   Password: admin123`);
     console.log(`   Role: admin`);
     
-    return savedUser;
-    await this.ensureFirebaseAuthUser('admin@pandicrm.com', 'admin123');
+    if (FIREBASE_WEB_API_KEY) {
+      // attempt to ensure Firebase Auth user exists only when API key is configured
+      await this.ensureFirebaseAuthUser('admin@pandicrm.com', 'admin123');
+    }
 
     return savedUser;
   }
