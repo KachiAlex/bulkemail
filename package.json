@@ -68,6 +68,10 @@
     "typeorm": "^0.3.19",
     "uuid": "^9.0.1"
   },
+  "dependencies": {
+    "serverless-http": "^3.0.0",
+    "firebase-admin": "^11.0.0"
+  },
   "devDependencies": {
     "@nestjs/cli": "^10.2.1",
     "@nestjs/schematics": "^10.1.0",
