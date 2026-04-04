@@ -49,6 +49,18 @@ function main() {
   }
 
   console.log('Functions copied successfully.');
+
+  // Also copy frontend build to repo root 'dist' so Netlify publish path exists
+  const frontendDist = path.join(repoRoot, 'frontend', 'dist');
+  const outDist = path.join(repoRoot, 'dist');
+  if (fs.existsSync(frontendDist) && fs.statSync(frontendDist).isDirectory()) {
+    if (fs.existsSync(outDist)) fs.rmSync(outDist, { recursive: true, force: true });
+    console.log('Copying frontend build from', frontendDist, 'to', outDist);
+    copyRecursive(frontendDist, outDist);
+    console.log('Frontend build copied to dist.');
+  } else {
+    console.warn('No frontend/dist found to copy to repo root dist.');
+  }
 }
 
 if (require.main === module) main();
