@@ -18,8 +18,9 @@ export default defineConfig(({ mode }) => {
         isProduction ? '/api' : (env.VITE_API_BASE_URL || 'http://localhost:3000/api')
       ),
       __API_TIMEOUT_MS__: JSON.stringify(
-        isProduction ? '10000' : (env.VITE_API_TIMEOUT_MS || '30000')
+        isProduction ? '30000' : (env.VITE_API_TIMEOUT_MS || '30000')
       ),
+      __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     },
     resolve: {
       alias: {
@@ -31,17 +32,18 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       proxy: {
         '/api': {
-          target: 'http://localhost:3000',
+          target: env.VITE_API_BASE_URL || 'http://localhost:3000/api',
           changeOrigin: true,
+          secure: false,
         },
       },
     },
     build: {
       rollupOptions: {
         output: {
-          entryFileNames: `assets/[name]-[hash]-v3.js`,
-          chunkFileNames: `assets/[name]-[hash]-v3.js`,
-          assetFileNames: `assets/[name]-[hash]-v3.[ext]`
+          entryFileNames: `assets/[name]-[hash]-v4.js`,
+          chunkFileNames: `assets/[name]-[hash]-v4.js`,
+          assetFileNames: `assets/[name]-[hash]-v4.[ext]`
         }
       },
       target: 'esnext',
