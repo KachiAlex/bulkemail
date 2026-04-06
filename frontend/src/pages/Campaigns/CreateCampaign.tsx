@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Editor } from '@tinymce/tinymce-react';
+import CustomEditor from '../../components/CustomEditor';
 import {
   Box,
   Card,
@@ -387,32 +387,15 @@ export default function CreateCampaign() {
                     <Typography variant="subtitle2" gutterBottom>
                       Email Content
                     </Typography>
-                    <Editor
-                      apiKey="m1pirpi2qyu2euxtfaggtgfvsw6fd0c9kkha4tg1h8gf352f"
+                    <CustomEditor
                       value={formData.content}
-                      onEditorChange={(content: string) => {
+                      onChange={(content: string) => {
                         handleChange('content', content);
                         // Also save HTML content for rich text emails
                         handleChange('htmlContent', content);
                       }}
-                      init={{
-                        height: 400,
-                        menubar: true,
-                        plugins: [
-                          'anchor', 'autolink', 'charmap', 'code', 'codesample', 'emoticons', 'fullscreen',
-                          'help', 'image', 'link', 'lists', 'media', 'preview', 'searchreplace', 'table',
-                          'visualblocks', 'visualchars', 'wordcount'
-                        ],
-                        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table | code preview fullscreen | removeformat',
-                        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                        branding: false,
-                        promotion: false,
-                        // Disable TinyMCE templates functionality
-                        templates: false,
-                        template_toolbar: false,
-                        font_family_formats: 'Arial=arial,helvetica,sans-serif; Arial Black=arial black,avant garde; Book Antiqua=book antiqua,palatino; Comic Sans MS=comic sans ms,sans-serif; Courier New=courier new,courier; Georgia=georgia,palatino; Helvetica=helvetica; Impact=impact,chicago; Symbol=symbol; Tahoma=tahoma,arial,helvetica,sans-serif; Terminal=terminal,monaco; Times New Roman=times new roman,times; Trebuchet MS=trebuchet ms,geneva; Verdana=verdana,geneva; Webdings=webdings; Wingdings=wingdings,zapf dingbats',
-                        block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4; Heading 5=h5; Heading 6=h6; Preformatted=pre',
-                      }}
+                      height={400}
+                      placeholder="Create your campaign content..."
                     />
                   </Box>
                 ) : (
