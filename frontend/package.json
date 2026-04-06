@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node -e \"const { execSync } = require('child_process'); const map = { linux: '@rollup/rollup-linux-x64-gnu', win32: '@rollup/rollup-win32-x64-msvc' }; const pkg = map[process.platform]; if (!pkg) process.exit(0); try { execSync('npm install --prefix .. ' + pkg + '@4.60.0 --no-save --force --ignore-scripts', { stdio: 'inherit' }); } catch { console.warn('rollup native package install skipped'); }\"",
     "build": "vite build",
     "build:webpack": "webpack --mode production",
     "build:netlify": "vite build",
