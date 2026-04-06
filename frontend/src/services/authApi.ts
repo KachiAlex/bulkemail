@@ -26,10 +26,45 @@ export interface RegisterPayload extends LoginPayload {
   lastName: string;
 }
 
+// Helper function for retry logic
+const retryRequest = async <T>(
+  requestFn: () => Promise<T>,
+  maxRetries: number = 2,
+  delay: number = 1000
+): Promise<T> => {
+  let lastError: any;
+  
+  for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+    try {
+      return await requestFn();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Don't retry on authentication errors (4xx)
+      if (error.response?.status >= 400 && error.response?.status < 500) {
+        throw error;
+      }
+      
+      // Don't retry on the last attempt
+      if (attempt > maxRetries) {
+        throw error;
+      }
+      
+      // Wait before retry
+      await new Promise(resolve => setTimeout(resolve, delay * attempt));
+      console.log(`Retrying request... Attempt ${attempt + 1}/${maxRetries + 1}`);
+    }
+  }
+  
+  throw lastError;
+};
+
 export const authApi = {
   async login(payload: LoginPayload): Promise<AuthResponse> {
     try {
-      const { data } = await httpClient.post<AuthResponse>('/auth/login', payload);
+      const { data } = await retryRequest(async () => 
+        httpClient.post<AuthResponse>('/auth/login', payload)
+      );
       return data;
     } catch (error: any) {
       console.error('Login API error:', error);
@@ -42,9 +77,11 @@ export const authApi = {
       } else if (error.response?.status === 500) {
         throw new Error('Server error. Please try again later');
       } else if (error.code === 'ECONNABORTED') {
-        throw new Error('Connection timeout. Please check your internet connection');
+        throw new Error('Server is taking longer to respond. Please try again in a moment');
       } else if (error.code === 'ERR_NETWORK') {
-        throw new Error('Network error. Please check your connection');
+        throw new Error('Unable to connect to server. Please check your internet connection');
+      } else if (error.message?.includes('timeout')) {
+        throw new Error('Server is busy. Please try again');
       }
       
       throw new Error(error.response?.data?.message || error.message || 'Login failed');
@@ -53,7 +90,9 @@ export const authApi = {
 
   async register(payload: RegisterPayload): Promise<AuthResponse> {
     try {
-      const { data } = await httpClient.post<AuthResponse>('/auth/register', payload);
+      const { data } = await retryRequest(async () =>
+        httpClient.post<AuthResponse>('/auth/register', payload)
+      );
       return data;
     } catch (error: any) {
       console.error('Registration API error:', error);
@@ -68,9 +107,11 @@ export const authApi = {
       } else if (error.response?.status === 500) {
         throw new Error('Server error. Please try again later');
       } else if (error.code === 'ECONNABORTED') {
-        throw new Error('Connection timeout. Please check your internet connection');
+        throw new Error('Server is taking longer to respond. Please try again in a moment');
       } else if (error.code === 'ERR_NETWORK') {
-        throw new Error('Network error. Please check your connection');
+        throw new Error('Unable to connect to server. Please check your internet connection');
+      } else if (error.message?.includes('timeout')) {
+        throw new Error('Server is busy. Please try again');
       }
       
       throw new Error(error.response?.data?.message || error.message || 'Registration failed');
@@ -88,7 +129,9 @@ export const authApi = {
 
   async getProfile(): Promise<AuthResponse['user']> {
     try {
-      const { data } = await httpClient.get<AuthResponse['user']>('/auth/me');
+      const { data } = await retryRequest(async () =>
+        httpClient.get<AuthResponse['user']>('/auth/me')
+      );
       return data;
     } catch (error: any) {
       console.error('Get profile API error:', error);
@@ -98,9 +141,11 @@ export const authApi = {
       } else if (error.response?.status === 404) {
         throw new Error('User not found');
       } else if (error.code === 'ECONNABORTED') {
-        throw new Error('Connection timeout. Please check your internet connection');
+        throw new Error('Server is taking longer to respond. Please try again in a moment');
       } else if (error.code === 'ERR_NETWORK') {
-        throw new Error('Network error. Please check your connection');
+        throw new Error('Unable to connect to server. Please check your internet connection');
+      } else if (error.message?.includes('timeout')) {
+        throw new Error('Server is busy. Please try again');
       }
       
       throw new Error(error.response?.data?.message || error.message || 'Failed to get profile');

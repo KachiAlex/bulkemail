@@ -22,8 +22,8 @@
   ],
   "env": {
     "VITE_API_BASE_URL": "/api",
-    "VITE_API_TIMEOUT_MS": "10000",
+    "VITE_API_TIMEOUT_MS": "30000",
     "NODE_ENV": "production",
-    "BUILD_TIMESTAMP": "2025-04-06-14-55"
+    "BUILD_TIMESTAMP": "2025-04-06-15-50"
   }
 }
