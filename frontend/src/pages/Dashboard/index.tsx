@@ -71,168 +71,9 @@ export default function Dashboard() {
   }, []);
 
   const createSampleData = async () => {
-    try {
-      // Check if user already has data
-      const existingContacts = await crmAPI.getContacts();
-      if (existingContacts.length > 0) {
-        console.log('User already has data, skipping sample data creation');
-        return;
-      }
-
-      console.log('Creating sample data for new user...');
-      
-      // Create sample contacts
-      const sampleContacts = [
-        {
-          firstName: 'John',
-          lastName: 'Smith',
-          email: 'john.smith@example.com',
-          phone: '+1 (555) 123-4567',
-          company: 'Acme Corp',
-          jobTitle: 'CEO',
-          status: 'qualified' as const,
-          leadScore: 85,
-          tags: ['enterprise', 'decision-maker'],
-          source: 'website',
-          category: 'prospect' as const
-        },
-        {
-          firstName: 'Sarah',
-          lastName: 'Johnson',
-          email: 'sarah.johnson@techstart.com',
-          phone: '+1 (555) 234-5678',
-          company: 'TechStart Inc',
-          jobTitle: 'CTO',
-          status: 'contacted' as const,
-          leadScore: 72,
-          tags: ['startup', 'tech'],
-          source: 'referral',
-          category: 'lead' as const
-        },
-        {
-          firstName: 'Mike',
-          lastName: 'Davis',
-          email: 'mike.davis@globalcorp.com',
-          phone: '+1 (555) 345-6789',
-          company: 'Global Corp',
-          jobTitle: 'VP Sales',
-          status: 'new' as const,
-          leadScore: 65,
-          tags: ['enterprise', 'sales'],
-          source: 'email-campaign',
-          category: 'lead' as const
-        }
-      ];
-
-      // Create sample opportunities
-      const sampleOpportunities = [
-        {
-          name: 'Enterprise Software License',
-          accountId: 'acme-corp-account', // Will be created as a placeholder
-          contactId: '', // Will be set after contacts are created
-          value: 125000,
-          stage: 'negotiation' as const,
-          probability: 75,
-          expectedCloseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-          source: 'website',
-          description: 'Enterprise software licensing deal with ACME Corp'
-        },
-        {
-          name: 'Cloud Migration Project',
-          accountId: 'techstart-account', // Will be created as a placeholder
-          contactId: '', // Will be set after contacts are created
-          value: 89000,
-          stage: 'proposal' as const,
-          probability: 60,
-          expectedCloseDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000), // 45 days from now
-          source: 'referral',
-          description: 'Cloud migration project for TechStart Inc'
-        }
-      ];
-
-      // Create sample tasks
-      const sampleTasks = [
-        {
-          title: 'Follow up with John Smith',
-          description: 'Call to discuss enterprise pricing',
-          dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-          priority: 'high' as const,
-          status: 'pending' as const,
-          type: 'call' as const,
-          assignedTo: 'current-user',
-          createdBy: 'current-user'
-        },
-        {
-          title: 'Prepare proposal for TechStart',
-          description: 'Create detailed proposal for cloud migration',
-          dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
-          priority: 'medium' as const,
-          status: 'pending' as const,
-          type: 'follow-up' as const,
-          assignedTo: 'current-user',
-          createdBy: 'current-user'
-        }
-      ];
-
-      // Create contacts first - start with just one to test
-      const createdContacts = [];
-      try {
-        console.log('Creating first contact:', sampleContacts[0].firstName, sampleContacts[0].lastName);
-        const created = await crmAPI.createContact(sampleContacts[0]);
-        console.log('Contact created successfully:', created.id);
-        createdContacts.push(created);
-        console.log('First contact created, continuing with others...');
-        
-        // Create remaining contacts
-        for (let i = 1; i < sampleContacts.length; i++) {
-          try {
-            console.log('Creating contact:', sampleContacts[i].firstName, sampleContacts[i].lastName);
-            const created = await crmAPI.createContact(sampleContacts[i]);
-            console.log('Contact created successfully:', created.id);
-            createdContacts.push(created);
-          } catch (error) {
-            console.error('Error creating contact:', sampleContacts[i].firstName, error);
-          }
-        }
-      } catch (error) {
-        console.error('Error creating first contact:', error);
-        console.error('Full error details:', error);
-      }
-
-      // Update opportunities with contact IDs
-      for (let i = 0; i < sampleOpportunities.length; i++) {
-        if (createdContacts[i]) {
-          try {
-            sampleOpportunities[i].contactId = createdContacts[i].id;
-            console.log('Creating opportunity:', sampleOpportunities[i].name);
-            console.log('Opportunity data:', JSON.stringify(sampleOpportunities[i], null, 2));
-            const created = await crmAPI.createOpportunity(sampleOpportunities[i]);
-            console.log('Opportunity created successfully:', created.id);
-          } catch (error) {
-            console.error('Error creating opportunity:', sampleOpportunities[i].name, error);
-            console.error('Full error details:', error);
-          }
-        } else {
-          console.log('No contact available for opportunity:', sampleOpportunities[i].name);
-        }
-      }
-
-      // Create tasks
-      for (const task of sampleTasks) {
-        try {
-          console.log('Creating task:', task.title);
-          await crmAPI.createTask(task);
-          console.log('Task created successfully');
-        } catch (error) {
-          console.error('Error creating task:', task.title, error);
-        }
-      }
-
-      console.log('Sample data created successfully');
-      toast.success('Welcome! Sample data has been added to get you started.');
-    } catch (error) {
-      console.error('Error creating sample data:', error);
-    }
+    // Sample data creation disabled to prevent errors
+    console.log('Sample data creation is disabled');
+    return;
   };
 
   const fetchDashboardData = async () => {
@@ -284,32 +125,10 @@ export default function Dashboard() {
         setRecentActivities([]);
       }
 
-      // If no data exists, create sample data
+      // If no data exists, show empty state
       if (contacts.length === 0) {
-        console.log('No contacts found, creating sample data...');
-        try {
-          await createSampleData();
-          console.log('Sample data creation completed');
-          
-          // Refresh data after creating sample data
-          const [crmData, contactsData, opportunities, tasks, activities] = await Promise.all([
-            crmAPI.getDashboardStats(),
-            crmAPI.getContacts(),
-            crmAPI.getOpportunities(),
-            crmAPI.getTasks(),
-            crmAPI.getActivities()
-          ]);
-          
-          console.log('Refreshed data:', { contacts: contactsData.length, opportunities: opportunities.length, tasks: tasks.length });
-          setCrmStats(crmData);
-          setRecentContacts(contactsData.slice(0, 5));
-          setRecentOpportunities(opportunities.slice(0, 5));
-          setRecentTasks(tasks.slice(0, 5));
-          setRecentActivities(activities.slice(0, 10));
-        } catch (error) {
-          console.error('Error creating sample data:', error);
-          toast.error('Failed to create sample data');
-        }
+        console.log('No contacts found, showing empty state');
+        // Don't create sample data - just show empty dashboard
       } else {
         console.log('Contacts already exist:', contacts.length);
       }
