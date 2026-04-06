@@ -5,9 +5,7 @@
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist",
-        "buildCommand": "cd frontend && npm run build",
-        "installCommand": "cd frontend && npm install"
+        "distDir": "dist"
       }
     }
   ],
@@ -17,8 +15,8 @@
       "destination": "https://pandicrm.onrender.com/api/$1"
     },
     {
-      "source": "/(.*)",
-      "destination": "/frontend/index.html"
+      "source": "/((?!api).*)",
+      "destination": "/index.html"
     }
   ],
   "env": {
