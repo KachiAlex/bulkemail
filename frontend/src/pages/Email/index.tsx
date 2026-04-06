@@ -77,6 +77,7 @@ import { crmAPI } from '../../services/crm-api';
 import { format } from 'date-fns/format';
 import { safeConvertToDate as safeDateHelper } from '../../utils/dateHelpers';
 import { authApi } from '../../services/authApi';
+import httpClient from '../../services/httpClient';
 
 // Email Template interface
 interface EmailTemplate {
@@ -338,17 +339,9 @@ export default function Email() {
   // Template functions
   const fetchTemplates = async () => {
     try {
-      console.log('Fetching templates from Render backend...');
-      const token = await auth.currentUser?.getIdToken();
-      const response = await fetch('https://pandicrm.onrender.com/api/email-templates', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch templates');
-      const data = await response.json();
+      console.log('Fetching templates...');
+      const response = await httpClient.get('/email-templates');
+      const data = response.data;
       const templates = data.templates || data || [];
       // Convert timestamps to Date objects safely
       const processedTemplates = templates.map((t: any) => ({
@@ -407,42 +400,24 @@ export default function Email() {
       if (selectedTemplate && selectedTemplate.id) {
         // Update existing template
         console.log('Updating template:', selectedTemplate.id);
-        const token = await auth.currentUser?.getIdToken();
-        const response = await fetch(`https://pandicrm.onrender.com/api/email-templates/${selectedTemplate.id}` , {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-          },
-          body: JSON.stringify({
-            name: templateForm.name,
-            subject: templateForm.subject,
-            body: templateForm.body,
-            category: templateForm.category,
-            isActive: templateForm.isActive
-          })
+        await httpClient.put(`/email-templates/${selectedTemplate.id}`, {
+          name: templateForm.name,
+          subject: templateForm.subject,
+          body: templateForm.body,
+          category: templateForm.category,
+          isActive: templateForm.isActive
         });
-        if (!response.ok) throw new Error('Failed to update template');
         toast.success('Template updated successfully');
       } else {
         // Create new template
         console.log('Creating new template');
-        const token = await auth.currentUser?.getIdToken();
-        const response = await fetch('https://pandicrm.onrender.com/api/email-templates', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-          },
-          body: JSON.stringify({
-            name: templateForm.name,
-            subject: templateForm.subject,
-            body: templateForm.body,
-            category: templateForm.category,
-            isActive: templateForm.isActive
-          })
+        await httpClient.post('/email-templates', {
+          name: templateForm.name,
+          subject: templateForm.subject,
+          body: templateForm.body,
+          category: templateForm.category,
+          isActive: templateForm.isActive
         });
-        if (!response.ok) throw new Error('Failed to create template');
         toast.success('Template created successfully');
       }
 
@@ -463,14 +438,7 @@ export default function Email() {
 
   const handleDeleteTemplate = async (templateId: string) => {
     try {
-      const token = await auth.currentUser?.getIdToken();
-      const response = await fetch(`https://pandicrm.onrender.com/api/email-templates/${templateId}`, {
-        method: 'DELETE',
-        headers: {
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        }
-      });
-      if (!response.ok) throw new Error('Failed to delete template');
+      await httpClient.delete(`/email-templates/${templateId}`);
       toast.success('Template deleted successfully');
       await fetchTemplates(); // Refresh the list
     } catch (error: any) {
@@ -786,15 +754,8 @@ export default function Email() {
                 startIcon={<Add />}
                 onClick={async () => {
                   try {
-                    const token = await auth.currentUser?.getIdToken();
-                    const response = await fetch('https://pandicrm.onrender.com/api/email-templates/seed', {
-                      method: 'POST',
-                      headers: {
-                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                      }
-                    });
-                    if (!response.ok) throw new Error('Failed to seed templates');
-                    const data = await response.json();
+                    const response = await httpClient.post('/email-templates/seed');
+                    const data = response.data;
                     toast.success(`Created ${data.count || 21} templates!`);
                     await fetchTemplates();
                   } catch (error: any) {
