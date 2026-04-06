@@ -2,16 +2,10 @@
   "buildCommand": "npm run build:all",
   "outputDirectory": "frontend/dist",
   "installCommand": "npm install && cd frontend && npm install",
-  "builds": [
-    {
-      "src": "api/index.ts",
-      "use": "@vercel/node"
-    }
-  ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/index"
+      "dest": "https://pandicrm.onrender.com/api/$1"
     },
     {
       "src": "/assets/(.*)",

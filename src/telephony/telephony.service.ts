@@ -2,14 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import * as twilio from 'twilio';
+import { Twilio } from 'twilio';
 import { Call, CallStatus, CallDirection } from './entities/call.entity';
 import { CreateCallDto } from './dto/create-call.dto';
 import { UpdateCallDto } from './dto/update-call.dto';
 
 @Injectable()
 export class TelephonyService {
-  private twilioClient: twilio.Twilio;
+  private twilioClient: Twilio;
   private twilioNumber: string;
 
   constructor(
@@ -22,7 +22,7 @@ export class TelephonyService {
     this.twilioNumber = this.configService.get<string>('TWILIO_PHONE_NUMBER') ?? '';
 
     if (accountSid && authToken) {
-      this.twilioClient = twilio(accountSid, authToken);
+      this.twilioClient = new Twilio(accountSid, authToken);
     }
   }
 
