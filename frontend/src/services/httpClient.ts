@@ -1,8 +1,17 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { API_BASE_URL, API_TIMEOUT_MS } from '../config/env';
 
+// Force production to use relative API paths
+const getBaseUrl = () => {
+  // In production (Vercel), always use relative paths
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return '/api';
+  }
+  return API_BASE_URL;
+};
+
 const httpClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getBaseUrl(),
   timeout: API_TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',
