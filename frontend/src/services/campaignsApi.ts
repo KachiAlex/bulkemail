@@ -12,6 +12,7 @@ export interface CreateCampaignPayload {
   type: Campaign['type'];
   subject?: string;
   content: string;
+  status?: Campaign['status'];
   recipientIds?: string[];
   segmentId?: string;
   scheduledAt?: Date;
@@ -41,7 +42,12 @@ export const campaignsApi = {
   },
 
   async create(payload: CreateCampaignPayload): Promise<Campaign> {
-    const { data } = await httpClient.post<Campaign>('/campaigns', payload);
+    // Ensure status is provided
+    const campaignPayload = {
+      status: 'draft',
+      ...payload,
+    };
+    const { data } = await httpClient.post<Campaign>('/campaigns', campaignPayload);
     return normalizeCampaign(data);
   },
 
