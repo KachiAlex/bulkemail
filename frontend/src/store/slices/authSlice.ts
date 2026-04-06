@@ -26,7 +26,7 @@ const getStoredUser = (): User | null => {
   }
 };
 
-// Start with unauthenticated state - Firebase Auth will set the real state
+// Start with unauthenticated state - JWT auth will set the real state
 const initialState: AuthState = {
   isAuthenticated: false,
   user: null,
@@ -74,7 +74,7 @@ const authSlice = createSlice({
       state.user = user;
     },
     refreshUserData: (state, action: PayloadAction<User>) => {
-      // Refresh user data from Firestore
+      // Refresh user data from backend
       state.user = action.payload;
       localStorage.setItem('user', JSON.stringify(action.payload));
     },
