@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://pandicrm.onrender.com/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/frontend/index.html"
+    }
+  ],
+  "env": {
+    "VITE_API_BASE_URL": "https://pandicrm.onrender.com",
+    "VITE_API_TIMEOUT_MS": "10000"
+  }
+}
